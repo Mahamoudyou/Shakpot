@@ -92,7 +92,7 @@ export function MenuSection() {
   });
 
   return (
-    <section id="menu" className="py-16 md:py-24 bg-surface-hover">
+    <section id="menu" className="scroll-mt-16 py-16 md:py-24 bg-surface-hover">
       <div className="container mx-auto px-4">
         
         {/* En-tête de section */}

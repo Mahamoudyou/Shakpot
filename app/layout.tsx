@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
       <body className={`${inter.variable} min-h-screen flex flex-col`}>
         <ThemeProvider
           attribute="class"

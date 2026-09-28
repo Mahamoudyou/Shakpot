@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Flame, Clock, Star, Sparkles, ShoppingBag, ShieldCheck } from "lucide-react";
+import { Flame, Clock, Star, Sparkles, ShoppingBag, ShieldCheck } from "lucide-react";
 
 export function Hero() {
   return (
@@ -25,34 +25,21 @@ export function Hero() {
             </div>
 
             {/* Titre Principal */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black tracking-tight text-foreground leading-[1.08] mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black tracking-tight text-foreground leading-[1.08] mb-8">
               Savourez chaque <br className="hidden sm:inline" />
               <span className="bg-gradient-to-r from-primary-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">
                 bouchée royale.
               </span>
             </h1>
 
-            {/* Description */}
-            <p className="text-base sm:text-lg md:text-xl text-muted max-w-xl mx-auto lg:mx-0 mb-8 font-normal leading-relaxed">
-              Des smash burgers juteux, des tacos généreux et des recettes exclusives préparées à la minute avec des ingrédients 100% frais.
-            </p>
-
-            {/* Boutons d'action */}
+            {/* Bouton d'action principal */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-10">
               <Link 
                 href="#menu" 
-                className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-primary-600 rounded-full overflow-hidden shadow-xl shadow-primary-600/30 hover:shadow-primary-600/50 hover:bg-primary-700 transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-0.5 active:translate-y-0"
+                className="group relative inline-flex items-center justify-center px-9 py-4 text-base md:text-lg font-bold text-white bg-primary-600 rounded-full overflow-hidden shadow-xl shadow-primary-600/30 hover:shadow-primary-600/50 hover:bg-primary-700 transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 <ShoppingBag className="w-5 h-5 mr-2.5 transition-transform group-hover:scale-110" />
                 <span>COMMANDER MAINTENANT</span>
-              </Link>
-
-              <Link 
-                href="#menu" 
-                className="inline-flex items-center justify-center px-7 py-4 text-base font-semibold text-foreground bg-surface/80 backdrop-blur-md border border-border rounded-full hover:bg-surface-hover hover:border-primary-500/30 transition-all duration-300 w-full sm:w-auto shadow-sm"
-              >
-                <span>Découvrir la carte</span>
-                <ArrowRight className="ml-2 w-4 h-4 text-muted group-hover:text-foreground transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
