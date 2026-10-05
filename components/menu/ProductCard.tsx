@@ -2,20 +2,24 @@ import { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
+  onSelect?: (product: Product) => void;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onSelect }: ProductCardProps) {
   return (
-    <div className="group bg-surface rounded-2xl overflow-hidden border border-border hover:shadow-lg transition-all duration-300 flex flex-col h-full relative">
+    <div 
+      onClick={() => onSelect && onSelect(product)}
+      className="group bg-surface rounded-2xl overflow-hidden border border-border hover:border-primary-500/40 hover:shadow-xl transition-all duration-300 flex flex-col h-full relative cursor-pointer transform hover:-translate-y-1"
+    >
       
       {/* Badge Promotion */}
       {product.is_promotion && (
-        <div className="absolute top-4 left-4 z-10 bg-primary-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+        <div className="absolute top-4 left-4 z-10 bg-primary-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
           Promo
         </div>
       )}
 
-      {/* Image (Placeholder temporaire) */}
+      {/* Image */}
       <div className="aspect-[4/3] bg-muted/20 relative flex items-center justify-center overflow-hidden">
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -31,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Contenu */}
       <div className="p-5 flex flex-col flex-1">
-        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1">
+        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary-600 transition-colors">
           {product.name}
         </h3>
         
@@ -44,22 +48,27 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.promotion_price ? (
               <>
                 <span className="text-sm text-muted line-through">
-                  {product.price} FDJ
+                  {product.price.toLocaleString("fr-FR")} FDJ
                 </span>
                 <span className="text-lg font-bold text-primary-600">
-                  {product.promotion_price} FDJ
+                  {product.promotion_price.toLocaleString("fr-FR")} FDJ
                 </span>
               </>
             ) : (
               <span className="text-lg font-bold text-foreground">
-                {product.price} FDJ
+                {product.price.toLocaleString("fr-FR")} FDJ
               </span>
             )}
           </div>
           
           <button 
-            className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 hover:bg-primary-600 hover:text-white transition-colors flex items-center justify-center"
-            aria-label={`Ajouter ${product.name} au panier`}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onSelect) onSelect(product);
+            }}
+            className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 hover:bg-primary-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+            aria-label={`Voir les détails de ${product.name}`}
           >
             <span className="text-xl leading-none">+</span>
           </button>

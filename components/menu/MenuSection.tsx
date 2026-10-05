@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { Category, Product } from "@/types";
 import { ProductCard } from "./ProductCard";
+import { ProductModal } from "./ProductModal";
 
 // --- DONNÉES TEMPORAIRES (Mocks) ---
 const MOCK_CATEGORIES: Category[] = [
@@ -64,9 +65,10 @@ const MOCK_PRODUCTS: Product[] = [
     id: "p5",
     name: "Coca-Cola",
     slug: "coca-cola",
-    description: "Canette 33cl bien fraîche.",
+    description: "Canette 33cl bien fraîche, servie avec glaçons et citron.",
     price: 300,
     category_id: "4",
+    image_url: "/images/coca-cola.jpg",
     is_available: true,
     is_promotion: false,
   },
@@ -75,6 +77,7 @@ const MOCK_PRODUCTS: Product[] = [
 export function MenuSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Filtrage des produits selon la catégorie et la recherche
   const filteredProducts = MOCK_PRODUCTS.filter((product) => {
@@ -144,7 +147,11 @@ export function MenuSection() {
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onSelect={(p) => setSelectedProduct(p)}
+              />
             ))}
           </div>
         ) : (
@@ -167,6 +174,13 @@ export function MenuSection() {
             </button>
           </div>
         )}
+
+        {/* Modale Fiche Produit Interactive */}
+        <ProductModal 
+          product={selectedProduct} 
+          isOpen={!!selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+        />
 
       </div>
     </section>
