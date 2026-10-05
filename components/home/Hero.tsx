@@ -1,8 +1,18 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
 import { Flame, Clock, Star, Sparkles, ShoppingBag, ShieldCheck } from "lucide-react";
 
 export function Hero() {
+  const handleScrollToMenu = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const menuElement = document.getElementById("menu");
+    if (menuElement) {
+      menuElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.pushState(null, "", "#menu");
+    }
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-background via-surface/40 to-background pt-8 md:pt-16 lg:pt-20 pb-16 lg:pb-24">
       {/* Éléments de fond décoratifs */}
@@ -32,15 +42,16 @@ export function Hero() {
               </span>
             </h1>
 
-            {/* Bouton d'action principal */}
+            {/* Bouton d'action principal avec scroll direct garanti */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-10">
-              <Link 
+              <a 
                 href="#menu" 
-                className="group relative inline-flex items-center justify-center px-9 py-4 text-base md:text-lg font-bold text-white bg-primary-600 rounded-full overflow-hidden shadow-xl shadow-primary-600/30 hover:shadow-primary-600/50 hover:bg-primary-700 transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-0.5 active:translate-y-0"
+                onClick={handleScrollToMenu}
+                className="group relative inline-flex items-center justify-center px-9 py-4 text-base md:text-lg font-bold text-white bg-primary-600 rounded-full overflow-hidden shadow-xl shadow-primary-600/30 hover:shadow-primary-600/50 hover:bg-primary-700 transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >
                 <ShoppingBag className="w-5 h-5 mr-2.5 transition-transform group-hover:scale-110" />
                 <span>COMMANDER MAINTENANT</span>
-              </Link>
+              </a>
             </div>
 
             {/* Reassurance & Avantages */}
