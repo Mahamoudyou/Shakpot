@@ -18,3 +18,40 @@ export type Product = {
   is_available: boolean;
   is_promotion: boolean;
 };
+
+export interface OptionItem {
+  id: string;
+  name: string;
+  price: number;
+  maxQuantity?: number;
+}
+
+export interface OptionGroup {
+  id: string;
+  title: string;
+  type: "single" | "multiple_with_quantity";
+  options: OptionItem[];
+}
+
+export interface SelectedOption {
+  groupId: string;
+  groupTitle: string;
+  optionId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface CartItem {
+  id: string;
+  product: Product;
+  quantity: number;
+  branch: {
+    id: string;
+    name: string;
+  };
+  selectedOptions: SelectedOption[];
+  unitPrice: number;
+  totalPrice: number;
+}
+

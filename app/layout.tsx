@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { CartProvider } from "@/lib/context/CartContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,9 +31,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header />
-          {children}
-          <Footer />
+          <CartProvider>
+            <Header />
+            {children}
+            <Footer />
+            <CartDrawer />
+          </CartProvider>
         </ThemeProvider>
       </body>
     </html>

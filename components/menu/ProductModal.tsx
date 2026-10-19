@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, Plus, Minus, Check, PhoneCall, Sparkles, MapPin } from "lucide-react";
-import { Product } from "@/types";
+import { X, Plus, Minus, MapPin, ShoppingBag, Check } from "lucide-react";
+import { Product, SelectedOption } from "@/types";
+import { useCart } from "@/lib/context/CartContext";
 
 interface ProductModalProps {
   product: Product | null;
@@ -11,23 +12,21 @@ interface ProductModalProps {
   onClose: () => void;
 }
 
-interface ExtraOption {
+interface OptionDef {
   id: string;
   name: string;
   price: number;
+  maxQuantity?: number;
 }
 
-const FOOD_EXTRAS: ExtraOption[] = [
-  { id: "cheddar", name: "Double Cheddar fondu", price: 200 },
-  { id: "sauce", name: "Sauce Shakpot Secrète", price: 150 },
-  { id: "frites", name: "Frites croustillantes", price: 300 },
-  { id: "boisson", name: "Canette fraîche 33cl", price: 300 },
-];
-
-const DRINK_EXTRAS: ExtraOption[] = [
-  { id: "citron", name: "Glaçons & Rondelle de citron", price: 0 },
-  { id: "canette2", name: "Deuxième canette fraîche", price: 250 },
-];
+interface OptionGroupDef {
+  id: string;
+  title: string;
+  icon: string;
+  type: "single" | "multiple_with_quantity";
+  defaultSelected?: string;
+  options: OptionDef[];
+}
 
 const BRANCHES = [
   { id: "centre", name: "Centre-Ville", desc: "Avenue 13" },
@@ -35,17 +34,240 @@ const BRANCHES = [
   { id: "heron", name: "Héron", desc: "Zone résidentielle" },
 ];
 
+// Configuration des options par catégorie de produit
+const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
+  // Catégorie 1 : Burgers
+  "1": [
+    {
+      id: "types",
+      title: "Types de burger",
+      icon: "🍔",
+      type: "single",
+      defaultSelected: "classique",
+      options: [
+        { id: "classique", name: "Burger Classique", price: 0 },
+        { id: "cheese", name: "Burger Cheese", price: 0 },
+        { id: "zinger", name: "Burger Zinger Croustillant", price: 150 },
+        { id: "beef", name: "Burger Beef Bacon", price: 250 },
+      ],
+    },
+    {
+      id: "sauces",
+      title: "Sauces",
+      icon: "🥫",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "algerienne", name: "Algérienne", price: 0 },
+        { id: "samourai", name: "Samouraï", price: 0 },
+        { id: "barbecue", name: "Barbecue", price: 0 },
+        { id: "andalouse", name: "Andalouse", price: 0 },
+        { id: "shakpot", name: "Sauce Shakpot", price: 100 },
+        { id: "mayo", name: "Mayonnaise", price: 0 },
+      ],
+    },
+    {
+      id: "viandes",
+      title: "Viandes",
+      icon: "🥩",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "steak", name: "Steak haché bœuf", price: 300 },
+        { id: "poulet", name: "Filet poulet pané", price: 300 },
+        { id: "bacon", name: "Bacon de bœuf grillé", price: 250 },
+      ],
+    },
+    {
+      id: "extras",
+      title: "Extras et suppléments",
+      icon: "✨",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "cheddar", name: "Double Cheddar fondu", price: 200 },
+        { id: "frites", name: "Frites croustillantes", price: 300 },
+        { id: "oignons", name: "Oignons caramélisés", price: 150 },
+        { id: "jalapenos", name: "Jalapeños piments", price: 100 },
+        { id: "boisson", name: "Canette fraîche 33cl", price: 300 },
+      ],
+    },
+  ],
+
+  // Catégorie 2 : Tacos
+  "2": [
+    {
+      id: "types",
+      title: "Format du Tacos",
+      icon: "🌮",
+      type: "single",
+      defaultSelected: "maxi",
+      options: [
+        { id: "simple", name: "Format Simple (L)", price: 0 },
+        { id: "maxi", name: "Format Maxi (XL)", price: 300 },
+        { id: "giga", name: "Format Giga (XXL)", price: 600 },
+      ],
+    },
+    {
+      id: "viandes",
+      title: "Viandes au choix",
+      icon: "🥩",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "poulet", name: "Poulet mariné", price: 0 },
+        { id: "hachee", name: "Viande hachée", price: 0 },
+        { id: "cordon", name: "Cordon bleu", price: 200 },
+        { id: "nuggets", name: "Nuggets", price: 200 },
+      ],
+    },
+    {
+      id: "sauces",
+      title: "Sauces",
+      icon: "🥫",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "fromagere", name: "Sauce Fromagère Shakpot", price: 0 },
+        { id: "algerienne", name: "Algérienne", price: 0 },
+        { id: "samourai", name: "Samouraï", price: 0 },
+        { id: "barbecue", name: "Barbecue", price: 0 },
+        { id: "andalouse", name: "Andalouse", price: 0 },
+      ],
+    },
+    {
+      id: "extras",
+      title: "Extras et suppléments",
+      icon: "✨",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "gratine", name: "Gratiné Cheddar au four", price: 250 },
+        { id: "frites", name: "Supplément Frites", price: 300 },
+        { id: "cheddar", name: "Double Fromage fondu", price: 200 },
+        { id: "boisson", name: "Canette fraîche 33cl", price: 300 },
+      ],
+    },
+  ],
+
+  // Catégorie 3 : Sandwichs
+  "3": [
+    {
+      id: "types",
+      title: "Type de Pain",
+      icon: "🥖",
+      type: "single",
+      defaultSelected: "baguette",
+      options: [
+        { id: "baguette", name: "Pain Baguette traditionnel", price: 0 },
+        { id: "galette", name: "Galette Tortilla", price: 0 },
+      ],
+    },
+    {
+      id: "viandes",
+      title: "Viandes",
+      icon: "🥩",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "kefta", name: "Portion Kefta grillée", price: 300 },
+        { id: "poulet", name: "Émincé de Poulet", price: 300 },
+      ],
+    },
+    {
+      id: "sauces",
+      title: "Sauces",
+      icon: "🥫",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "algerienne", name: "Algérienne", price: 0 },
+        { id: "samourai", name: "Samouraï", price: 0 },
+        { id: "blanche", name: "Sauce Blanche", price: 0 },
+        { id: "barbecue", name: "Barbecue", price: 0 },
+        { id: "andalouse", name: "Andalouse", price: 0 },
+      ],
+    },
+    {
+      id: "extras",
+      title: "Extras et suppléments",
+      icon: "✨",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "oeuf", name: "Œuf au plat", price: 150 },
+        { id: "cheddar", name: "Double Fromage Cheddar", price: 200 },
+        { id: "frites", name: "Portion de Frites", price: 300 },
+        { id: "boisson", name: "Canette fraîche 33cl", price: 300 },
+      ],
+    },
+  ],
+
+  // Catégorie 4 : Boissons
+  "4": [
+    {
+      id: "types",
+      title: "Format",
+      icon: "🥤",
+      type: "single",
+      defaultSelected: "33cl",
+      options: [
+        { id: "33cl", name: "Canette 33cl", price: 0 },
+        { id: "50cl", name: "Bouteille 50cl", price: 100 },
+        { id: "15l", name: "Bouteille 1.5L", price: 300 },
+      ],
+    },
+    {
+      id: "service",
+      title: "Service & Température",
+      icon: "🧊",
+      type: "single",
+      defaultSelected: "glacons",
+      options: [
+        { id: "glacons", name: "Glaçons & Rondelle de citron", price: 0 },
+        { id: "frais", name: "Bien frais", price: 0 },
+        { id: "ambiant", name: "Température ambiante", price: 0 },
+      ],
+    },
+    {
+      id: "extras",
+      title: "Extras et suppléments",
+      icon: "✨",
+      type: "multiple_with_quantity",
+      options: [
+        { id: "canette2", name: "Deuxième canette fraîche", price: 250 },
+        { id: "gobelet", name: "Gobelet supplémentaire avec glaçons", price: 50 },
+      ],
+    },
+  ],
+};
+
 export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
+  const { addItem, setIsCartOpen } = useCart();
+
   const [quantity, setQuantity] = useState(1);
   const [selectedBranch, setSelectedBranch] = useState("centre");
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [singleSelections, setSingleSelections] = useState<Record<string, string>>({});
+  const [optionQuantities, setOptionQuantities] = useState<Record<string, number>>({});
+  const [isAdded, setIsAdded] = useState(false);
 
-  // Réinitialiser les options quand le produit change
+  // Groupes d'options correspondant à la catégorie du produit
+  const optionGroups: OptionGroupDef[] =
+    product && CATEGORY_OPTIONS[product.category_id]
+      ? CATEGORY_OPTIONS[product.category_id]
+      : product
+      ? CATEGORY_OPTIONS["1"] // Par défaut options burger
+      : [];
+
+  // Réinitialiser les options quand le produit change ou s'ouvre
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && product) {
       setQuantity(1);
       setSelectedBranch("centre");
-      setSelectedExtras([]);
+      setIsAdded(false);
+
+      // Initialiser les sélections uniques avec leurs valeurs par défaut
+      const initialSingles: Record<string, string> = {};
+      const groups = CATEGORY_OPTIONS[product.category_id] || CATEGORY_OPTIONS["1"];
+      groups.forEach((g) => {
+        if (g.type === "single" && g.defaultSelected) {
+          initialSingles[g.id] = g.defaultSelected;
+        }
+      });
+      setSingleSelections(initialSingles);
+      setOptionQuantities({});
+
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -57,60 +279,133 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
 
   if (!isOpen || !product) return null;
 
-  const isDrink = product.category_id === "4";
-  const availableExtras = isDrink ? DRINK_EXTRAS : FOOD_EXTRAS;
+  // Calcul du prix unitaire de base
   const basePrice = product.promotion_price || product.price;
 
-  const extrasTotal = selectedExtras.reduce((sum, extraId) => {
-    const extra = availableExtras.find((e) => e.id === extraId);
-    return sum + (extra ? extra.price : 0);
-  }, 0);
+  // Calcul des suppléments issus des options uniques
+  let singleExtrasTotal = 0;
+  optionGroups.forEach((group) => {
+    if (group.type === "single") {
+      const selectedId = singleSelections[group.id];
+      const opt = group.options.find((o) => o.id === selectedId);
+      if (opt) singleExtrasTotal += opt.price;
+    }
+  });
 
-  const totalPrice = (basePrice + extrasTotal) * quantity;
+  // Calcul des suppléments issus des options avec quantité
+  let quantityExtrasTotal = 0;
+  Object.entries(optionQuantities).forEach(([key, qty]) => {
+    if (qty > 0) {
+      const [groupId, optId] = key.split("_");
+      const group = optionGroups.find((g) => g.id === groupId);
+      const opt = group?.options.find((o) => o.id === optId);
+      if (opt) {
+        quantityExtrasTotal += opt.price * qty;
+      }
+    }
+  });
 
-  const toggleExtra = (id: string) => {
-    setSelectedExtras((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const unitPrice = basePrice + singleExtrasTotal + quantityExtrasTotal;
+  const totalPrice = unitPrice * quantity;
+
+  // Sélection d'une option unique
+  const handleSelectSingle = (groupId: string, optionId: string) => {
+    setSingleSelections((prev) => ({
+      ...prev,
+      [groupId]: optionId,
+    }));
   };
 
-  // Génération du lien de commande WhatsApp
-  const handleWhatsAppOrder = () => {
-    const branchName = BRANCHES.find((b) => b.id === selectedBranch)?.name || "Centre-Ville";
-    const extrasList = selectedExtras.length > 0
-      ? selectedExtras
-          .map((id) => availableExtras.find((e) => e.id === id)?.name)
-          .filter(Boolean)
-          .join(", ")
-      : "Aucun supplément";
+  // Modification de quantité pour une option (sauces, viandes, extras)
+  const handleUpdateOptionQuantity = (groupId: string, optionId: string, delta: number) => {
+    const key = `${groupId}_${optionId}`;
+    setOptionQuantities((prev) => {
+      const current = prev[key] || 0;
+      const next = current + delta;
+      if (next <= 0) {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      }
+      return {
+        ...prev,
+        [key]: Math.min(next, 5), // Limite à 5 max par option
+      };
+    });
+  };
 
-    const message = encodeURIComponent(
-      `Bonjour SHAKPOT Djibouti !\n\nJe souhaite commander :\n` +
-      `🍽️ Plat : *${product.name}*\n` +
-      `🔢 Quantité : *${quantity}*\n` +
-      `📍 Branche : *${branchName}*\n` +
-      `➕ Extras : *${extrasList}*\n` +
-      `💰 Total : *${totalPrice.toLocaleString("fr-FR")} FDJ*\n\n` +
-      `Merci de me confirmer la livraison !`
-    );
+  // Ajout au Panier
+  const handleAddToCart = () => {
+    const branchObj = BRANCHES.find((b) => b.id === selectedBranch) || BRANCHES[0];
 
-    // Numéro WhatsApp par défaut de commande (peut être configuré)
-    window.open(`https://wa.me/25377000000?text=${message}`, "_blank");
+    // Construire la liste complète des options sélectionnées
+    const selectedOptionsList: SelectedOption[] = [];
+
+    optionGroups.forEach((group) => {
+      if (group.type === "single") {
+        const selId = singleSelections[group.id];
+        const opt = group.options.find((o) => o.id === selId);
+        if (opt) {
+          selectedOptionsList.push({
+            groupId: group.id,
+            groupTitle: group.title,
+            optionId: opt.id,
+            name: opt.name,
+            price: opt.price,
+            quantity: 1,
+          });
+        }
+      } else {
+        group.options.forEach((opt) => {
+          const key = `${group.id}_${opt.id}`;
+          const qty = optionQuantities[key] || 0;
+          if (qty > 0) {
+            selectedOptionsList.push({
+              groupId: group.id,
+              groupTitle: group.title,
+              optionId: opt.id,
+              name: opt.name,
+              price: opt.price,
+              quantity: qty,
+            });
+          }
+        });
+      }
+    });
+
+    addItem({
+      product,
+      quantity,
+      branch: {
+        id: branchObj.id,
+        name: branchObj.name,
+      },
+      selectedOptions: selectedOptionsList,
+      unitPrice,
+    });
+
+    setIsAdded(true);
+
+    // Feedback visuel puis ouverture du panier
+    setTimeout(() => {
+      onClose();
+      setIsCartOpen(true);
+    }, 400);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 animate-in fade-in duration-200">
       {/* Arrière-plan assombri */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Boîte Modale */}
-      <div className="relative w-full max-w-lg bg-surface rounded-3xl shadow-2xl border border-border overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg bg-surface rounded-3xl shadow-2xl border border-border overflow-hidden z-10 flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
         
         {/* En-tête avec Image du Produit */}
-        <div className="relative aspect-[16/10] w-full bg-muted/20 overflow-hidden">
+        <div className="relative aspect-[16/10] w-full bg-muted/20 overflow-hidden shrink-0">
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -143,18 +438,10 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
               Offre Spéciale
             </div>
           )}
-
-          {/* Badge disponibilité en bas de photo */}
-          <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-950/60 border border-emerald-500/30 backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-              Préparé à la minute • Frais garanti
-            </span>
-          </div>
         </div>
 
         {/* Corps de la Fiche Produit (Scrollable) */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
           
           {/* Titre & Description */}
           <div>
@@ -186,7 +473,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
 
           {/* Choix de la Branche / Quartier */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-3">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-2.5">
               <MapPin className="w-3.5 h-3.5 text-primary-600" />
               <span>Branche / Quartier de préparation :</span>
             </label>
@@ -200,7 +487,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                     onClick={() => setSelectedBranch(branch.id)}
                     className={`p-2.5 rounded-xl border text-center transition-all text-xs ${
                       isSelected
-                        ? "border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-600 font-bold shadow-sm"
+                        ? "border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-600 font-bold shadow-sm ring-1 ring-primary-500"
                         : "border-border hover:bg-surface-hover text-foreground font-medium"
                     }`}
                   >
@@ -212,48 +499,132 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
             </div>
           </div>
 
-          {/* Suppléments & Extras */}
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Personnaliser avec des suppléments :</span>
-            </label>
-            <div className="space-y-2">
-              {availableExtras.map((extra) => {
-                const isChecked = selectedExtras.includes(extra.id);
-                return (
-                  <button
-                    key={extra.id}
-                    type="button"
-                    onClick={() => toggleExtra(extra.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-sm ${
-                      isChecked
-                        ? "border-primary-600 bg-primary-50/50 dark:bg-primary-950/30 text-foreground"
-                        : "border-border hover:bg-surface-hover text-muted"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
-                          isChecked
-                            ? "bg-primary-600 border-primary-600 text-white"
-                            : "border-border bg-surface"
-                        }`}
-                      >
-                        {isChecked && <Check className="w-3.5 h-3.5" />}
-                      </div>
-                      <span className={isChecked ? "font-semibold text-foreground" : ""}>
-                        {extra.name}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-primary-600">
-                      {extra.price > 0 ? `+${extra.price} FDJ` : "Inclus"}
+          {/* Catégories de Personnalisation Réorganisées Horizontalement */}
+          {optionGroups.map((group) => {
+            return (
+              <div key={group.id} className="space-y-2.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span>{group.icon}</span>
+                    <span>{group.title}</span>
+                  </span>
+                  {group.type === "single" ? (
+                    <span className="text-[10px] text-muted lowercase font-normal">
+                      1 choix
                     </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                  ) : (
+                    <span className="text-[10px] text-primary-600 font-medium">
+                      quantités réglables (+ / −)
+                    </span>
+                  )}
+                </label>
+
+                {/* Choix affichés horizontalement */}
+                <div className="flex flex-wrap gap-2">
+                  {group.type === "single"
+                    ? group.options.map((opt) => {
+                        const isSelected = singleSelections[group.id] === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => handleSelectSingle(group.id, opt.id)}
+                            className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all flex items-center gap-1.5 ${
+                              isSelected
+                                ? "border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-600 font-bold shadow-sm ring-1 ring-primary-500"
+                                : "border-border bg-surface hover:bg-surface-hover text-muted hover:text-foreground"
+                            }`}
+                          >
+                            <span>{opt.name}</span>
+                            {opt.price > 0 && (
+                              <span
+                                className={`text-[11px] ${
+                                  isSelected ? "text-primary-600 font-bold" : "text-muted"
+                                }`}
+                              >
+                                +{opt.price} FDJ
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    : group.options.map((opt) => {
+                        const key = `${group.id}_${opt.id}`;
+                        const qty = optionQuantities[key] || 0;
+                        const isSelected = qty > 0;
+
+                        return (
+                          <div
+                            key={opt.id}
+                            className={`rounded-xl border transition-all text-xs sm:text-sm flex items-center overflow-hidden ${
+                              isSelected
+                                ? "border-primary-600 bg-primary-50/80 dark:bg-primary-950/40 text-foreground font-semibold shadow-sm ring-1 ring-primary-500"
+                                : "border-border bg-surface hover:bg-surface-hover text-muted hover:text-foreground"
+                            }`}
+                          >
+                            {!isSelected ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateOptionQuantity(group.id, opt.id, 1)
+                                }
+                                className="px-3 py-2 flex items-center gap-2 hover:text-foreground transition-colors"
+                              >
+                                <span className="w-4 h-4 rounded-full bg-primary-100 dark:bg-primary-950/60 text-primary-600 font-bold flex items-center justify-center text-xs">
+                                  +
+                                </span>
+                                <span>{opt.name}</span>
+                                {opt.price > 0 && (
+                                  <span className="text-[11px] text-primary-600 font-bold">
+                                    +{opt.price} FDJ
+                                  </span>
+                                )}
+                              </button>
+                            ) : (
+                              <div className="px-2.5 py-1.5 flex items-center gap-2">
+                                <span className="text-foreground">{opt.name}</span>
+                                {opt.price > 0 && (
+                                  <span className="text-[11px] font-bold text-primary-600">
+                                    +{opt.price * qty} FDJ
+                                  </span>
+                                )}
+
+                                {/* Boutons de contrôle de quantité */}
+                                <div className="flex items-center gap-1 bg-surface border border-border rounded-lg p-0.5 ml-1 shadow-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateOptionQuantity(group.id, opt.id, -1)
+                                    }
+                                    className="w-5 h-5 rounded-md flex items-center justify-center text-muted hover:text-red-500 hover:bg-surface-hover transition-colors"
+                                    aria-label={`Diminuer ${opt.name}`}
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <span className="w-4 text-center font-black text-xs text-primary-600">
+                                    {qty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateOptionQuantity(group.id, opt.id, 1)
+                                    }
+                                    disabled={qty >= (opt.maxQuantity || 5)}
+                                    className="w-5 h-5 rounded-md flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover transition-colors disabled:opacity-30"
+                                    aria-label={`Augmenter ${opt.name}`}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                </div>
+              </div>
+            );
+          })}
 
         </div>
 
@@ -261,7 +632,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
         <div className="p-5 border-t border-border bg-surface-hover/50 flex flex-col gap-4">
           
           <div className="flex items-center justify-between">
-            {/* Sélecteur de Quantité */}
+            {/* Sélecteur de Quantité du Plat */}
             <div className="flex items-center gap-3 bg-surface border border-border rounded-full p-1.5 shadow-sm">
               <button
                 type="button"
@@ -294,27 +665,32 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
             </div>
           </div>
 
-          {/* Bouton Commander */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleWhatsAppOrder}
-              className="flex-1 py-4 px-6 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-primary-600/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <span>COMMANDER VIA WHATSAPP</span>
-              <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold">
-                {totalPrice.toLocaleString("fr-FR")} FDJ
-              </span>
-            </button>
-            
-            <a
-              href="tel:[NUMÉROSHAKPOT]"
-              className="w-14 rounded-2xl border border-border bg-surface hover:bg-surface-hover text-foreground flex items-center justify-center transition-colors shadow-sm"
-              title="Appeler directement"
-            >
-              <PhoneCall className="w-5 h-5 text-primary-600" />
-            </a>
-          </div>
+          {/* Bouton Ajouter au Panier */}
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isAdded}
+            className={`w-full py-4 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 ${
+              isAdded
+                ? "bg-emerald-600 text-white shadow-emerald-600/25"
+                : "bg-primary-600 hover:bg-primary-700 text-white shadow-primary-600/25"
+            }`}
+          >
+            {isAdded ? (
+              <>
+                <Check className="w-5 h-5 animate-in zoom-in-50 duration-200" />
+                <span>AJOUTÉ AU PANIER !</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-5 h-5" />
+                <span>AJOUTER AU PANIER</span>
+                <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-semibold ml-1">
+                  {totalPrice.toLocaleString("fr-FR")} FDJ
+                </span>
+              </>
+            )}
+          </button>
 
         </div>
 
