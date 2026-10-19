@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
-import { MapPin, Phone, Mail, Link as LinkIcon } from "lucide-react";
+import { MapPin, Phone, Mail, Link as LinkIcon, ShoppingBag, ArrowRight } from "lucide-react";
+import { useCart } from "@/lib/context/CartContext";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { items, totalItemsCount, subtotal, setIsCartOpen } = useCart();
 
   return (
-    <footer className="bg-neutral-950 text-neutral-300 border-t border-neutral-800 pt-16 pb-10">
+    <footer className="bg-neutral-950 text-neutral-300 border-t border-neutral-800 pt-16 pb-12">
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Grille principale en 2 colonnes épurées */}
@@ -163,15 +167,119 @@ export function Footer() {
 
         </div>
 
-        {/* Pied de page inférieur (Centré, net, minimaliste) */}
+        {/* Section Panier en bas de page, à proximité immédiate de "Powered by Netlify" */}
+        <div id="panier" className="mb-12 p-6 sm:p-7 rounded-3xl bg-neutral-900/90 border border-neutral-800 shadow-2xl backdrop-blur-md">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-primary-600/20 border border-primary-500/30 text-primary-400 flex items-center justify-center font-bold">
+                <ShoppingBag className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>Votre Panier</span>
+                  <span className="text-xs bg-primary-600 text-white font-bold px-2 py-0.5 rounded-full">
+                    {totalItemsCount} {totalItemsCount > 1 ? "articles" : "article"}
+                  </span>
+                </h4>
+                <p className="text-xs text-neutral-400">
+                  {totalItemsCount > 0
+                    ? "Vos plats sélectionnés sont prêts pour la commande"
+                    : "Votre panier est vide. Choisissez vos plats préférés sur notre menu."}
+                </p>
+              </div>
+            </div>
+
+            {items.length > 0 && (
+              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end pt-2 md:pt-0">
+                <div className="text-left md:text-right">
+                  <p className="text-xs text-neutral-400">Total estimé</p>
+                  <p className="text-xl font-black text-primary-400">
+                    {subtotal.toLocaleString("fr-FR")} FDJ
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCartOpen(true)}
+                  className="py-3 px-6 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm shadow-xl shadow-primary-600/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
+                >
+                  <span>Passer la commande</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Aperçu détaillé des articles sélectionnés */}
+          {items.length > 0 ? (
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => setIsCartOpen(true)}
+                  className="bg-neutral-950/70 border border-neutral-800 hover:border-primary-500/40 rounded-2xl p-3.5 flex items-start gap-3 cursor-pointer transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 overflow-hidden relative shrink-0">
+                    {item.product.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.product.image_url}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xl">🍔</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 text-xs">
+                    <p className="font-bold text-white truncate group-hover:text-primary-400 transition-colors">
+                      {item.product.name}
+                    </p>
+                    <p className="text-primary-400 font-bold mt-0.5">
+                      {item.quantity} × {item.unitPrice.toLocaleString("fr-FR")} FDJ
+                    </p>
+                    {item.selectedOptions.length > 0 && (
+                      <p className="text-neutral-400 text-[11px] truncate mt-1">
+                        {item.selectedOptions
+                          .map((o) => `${o.name}${o.quantity > 1 ? ` (x${o.quantity})` : ""}`)
+                          .join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 flex items-center justify-between text-xs text-neutral-400 bg-neutral-950/50 p-3.5 rounded-2xl border border-neutral-800/60">
+              <span>Aucun produit dans le panier pour l'instant.</span>
+              <a
+                href="#menu"
+                className="text-primary-400 hover:text-primary-300 font-bold transition-colors"
+              >
+                Découvrir nos plats →
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Pied de page inférieur (Centré, net, minimaliste avec mention Powered by Netlify) */}
         <div className="pt-8 border-t border-neutral-800/80 flex flex-col items-center justify-center gap-3 text-center">
-          <Link 
-            href="#" 
-            className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors"
-          >
-            <LinkIcon className="w-3.5 h-3.5 text-primary-500" />
-            <span>Conditions d&apos;utilisation</span>
-          </Link>
+          <div className="flex items-center gap-4 text-xs text-neutral-400">
+            <Link 
+              href="#" 
+              className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+            >
+              <LinkIcon className="w-3.5 h-3.5 text-primary-500" />
+              <span>Conditions d&apos;utilisation</span>
+            </Link>
+            
+            <span>•</span>
+
+            {/* Mention Powered by Netlify */}
+            <span className="inline-flex items-center gap-1.5 text-neutral-300 font-medium">
+              <span className="w-2 h-2 rounded-full bg-[#00C7B7]" />
+              <span>Powered by Netlify</span>
+            </span>
+          </div>
           
           <p className="text-xs text-neutral-500">
             All Rights Reserved © {currentYear} — <strong className="text-neutral-400 font-medium">SHAKPOT</strong>

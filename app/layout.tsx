@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/lib/context/CartContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { BottomCartBar } from "@/components/cart/BottomCartBar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,6 +36,7 @@ export default function RootLayout({
             <Header />
             {children}
             <Footer />
+            <BottomCartBar />
             <CartDrawer />
           </CartProvider>
         </ThemeProvider>

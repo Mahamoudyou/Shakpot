@@ -22,7 +22,8 @@ export type Product = {
 export interface OptionItem {
   id: string;
   name: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
   maxQuantity?: number;
 }
 

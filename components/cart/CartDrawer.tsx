@@ -201,11 +201,6 @@ export function CartDrawer() {
                               x{opt.quantity}
                             </span>
                           )}
-                          {opt.price > 0 && (
-                            <span className="text-muted text-[10px]">
-                              (+{(opt.price * opt.quantity).toLocaleString("fr-FR")} FDJ)
-                            </span>
-                          )}
                         </span>
                       ))}
                     </div>
@@ -273,13 +268,13 @@ export function CartDrawer() {
               </div>
             </div>
 
-            {/* Bouton Commander via WhatsApp */}
+            {/* Bouton Passer la commande */}
             <button
               type="button"
               onClick={handleCheckoutWhatsApp}
               className="w-full py-3.5 px-6 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-primary-600/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>COMMANDER VIA WHATSAPP</span>
+              <span>PASSER LA COMMANDE</span>
               <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold">
                 {subtotal.toLocaleString("fr-FR")} FDJ
               </span>

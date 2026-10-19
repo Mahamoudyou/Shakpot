@@ -15,7 +15,8 @@ interface ProductModalProps {
 interface OptionDef {
   id: string;
   name: string;
-  price: number;
+  price?: number; // Prix du supplément pour les sauces/extras
+  basePrice?: number; // Prix de base direct pour les types de produit
   maxQuantity?: number;
 }
 
@@ -43,12 +44,15 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       title: "Types de burger",
       icon: "🍔",
       type: "single",
-      defaultSelected: "classique",
+      defaultSelected: "chicken",
       options: [
-        { id: "classique", name: "Burger Classique", price: 0 },
-        { id: "cheese", name: "Burger Cheese", price: 0 },
-        { id: "zinger", name: "Burger Zinger Croustillant", price: 150 },
-        { id: "beef", name: "Burger Beef Bacon", price: 250 },
+        { id: "chicken", name: "Chicken", basePrice: 500 },
+        { id: "beef", name: "Beef burger", basePrice: 600 },
+        { id: "zinger", name: "Zinger", basePrice: 700 },
+        { id: "double_chicken", name: "Double chicken", basePrice: 900 },
+        { id: "double_beef", name: "Double beef", basePrice: 900 },
+        { id: "double_zinger", name: "Double Zinger", basePrice: 1000 },
+        { id: "mixed", name: "Mixed beef chicken", basePrice: 1000 },
       ],
     },
     {
@@ -57,23 +61,13 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       icon: "🥫",
       type: "multiple_with_quantity",
       options: [
-        { id: "algerienne", name: "Algérienne", price: 0 },
-        { id: "samourai", name: "Samouraï", price: 0 },
-        { id: "barbecue", name: "Barbecue", price: 0 },
-        { id: "andalouse", name: "Andalouse", price: 0 },
+        { id: "algerienne", name: "Sauce Algérienne", price: 0 },
+        { id: "samourai", name: "Sauce Samouraï", price: 0 },
+        { id: "barbecue", name: "Sauce Barbecue", price: 0 },
+        { id: "andalouse", name: "Sauce Andalouse", price: 0 },
         { id: "shakpot", name: "Sauce Shakpot", price: 100 },
         { id: "mayo", name: "Mayonnaise", price: 0 },
-      ],
-    },
-    {
-      id: "viandes",
-      title: "Viandes",
-      icon: "🥩",
-      type: "multiple_with_quantity",
-      options: [
-        { id: "steak", name: "Steak haché bœuf", price: 300 },
-        { id: "poulet", name: "Filet poulet pané", price: 300 },
-        { id: "bacon", name: "Bacon de bœuf grillé", price: 250 },
+        { id: "ketchup", name: "Ketchup", price: 0 },
       ],
     },
     {
@@ -100,21 +94,9 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       type: "single",
       defaultSelected: "maxi",
       options: [
-        { id: "simple", name: "Format Simple (L)", price: 0 },
-        { id: "maxi", name: "Format Maxi (XL)", price: 300 },
-        { id: "giga", name: "Format Giga (XXL)", price: 600 },
-      ],
-    },
-    {
-      id: "viandes",
-      title: "Viandes au choix",
-      icon: "🥩",
-      type: "multiple_with_quantity",
-      options: [
-        { id: "poulet", name: "Poulet mariné", price: 0 },
-        { id: "hachee", name: "Viande hachée", price: 0 },
-        { id: "cordon", name: "Cordon bleu", price: 200 },
-        { id: "nuggets", name: "Nuggets", price: 200 },
+        { id: "simple", name: "Format Simple (L)", basePrice: 1500 },
+        { id: "maxi", name: "Format Maxi (XL)", basePrice: 1800 },
+        { id: "giga", name: "Format Giga (XXL)", basePrice: 2200 },
       ],
     },
     {
@@ -124,10 +106,10 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       type: "multiple_with_quantity",
       options: [
         { id: "fromagere", name: "Sauce Fromagère Shakpot", price: 0 },
-        { id: "algerienne", name: "Algérienne", price: 0 },
-        { id: "samourai", name: "Samouraï", price: 0 },
-        { id: "barbecue", name: "Barbecue", price: 0 },
-        { id: "andalouse", name: "Andalouse", price: 0 },
+        { id: "algerienne", name: "Sauce Algérienne", price: 0 },
+        { id: "samourai", name: "Sauce Samouraï", price: 0 },
+        { id: "barbecue", name: "Sauce Barbecue", price: 0 },
+        { id: "andalouse", name: "Sauce Andalouse", price: 0 },
       ],
     },
     {
@@ -153,18 +135,8 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       type: "single",
       defaultSelected: "baguette",
       options: [
-        { id: "baguette", name: "Pain Baguette traditionnel", price: 0 },
-        { id: "galette", name: "Galette Tortilla", price: 0 },
-      ],
-    },
-    {
-      id: "viandes",
-      title: "Viandes",
-      icon: "🥩",
-      type: "multiple_with_quantity",
-      options: [
-        { id: "kefta", name: "Portion Kefta grillée", price: 300 },
-        { id: "poulet", name: "Émincé de Poulet", price: 300 },
+        { id: "baguette", name: "Pain Baguette traditionnel", basePrice: 1000 },
+        { id: "galette", name: "Galette Tortilla", basePrice: 1000 },
       ],
     },
     {
@@ -173,11 +145,11 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       icon: "🥫",
       type: "multiple_with_quantity",
       options: [
-        { id: "algerienne", name: "Algérienne", price: 0 },
-        { id: "samourai", name: "Samouraï", price: 0 },
+        { id: "algerienne", name: "Sauce Algérienne", price: 0 },
+        { id: "samourai", name: "Sauce Samouraï", price: 0 },
         { id: "blanche", name: "Sauce Blanche", price: 0 },
-        { id: "barbecue", name: "Barbecue", price: 0 },
-        { id: "andalouse", name: "Andalouse", price: 0 },
+        { id: "barbecue", name: "Sauce Barbecue", price: 0 },
+        { id: "andalouse", name: "Sauce Andalouse", price: 0 },
       ],
     },
     {
@@ -203,9 +175,9 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
       type: "single",
       defaultSelected: "33cl",
       options: [
-        { id: "33cl", name: "Canette 33cl", price: 0 },
-        { id: "50cl", name: "Bouteille 50cl", price: 100 },
-        { id: "15l", name: "Bouteille 1.5L", price: 300 },
+        { id: "33cl", name: "Canette 33cl", basePrice: 300 },
+        { id: "50cl", name: "Bouteille 50cl", basePrice: 400 },
+        { id: "15l", name: "Bouteille 1.5L", basePrice: 600 },
       ],
     },
     {
@@ -234,7 +206,7 @@ const CATEGORY_OPTIONS: Record<string, OptionGroupDef[]> = {
 };
 
 export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
-  const { addItem, setIsCartOpen } = useCart();
+  const { addItem } = useCart();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedBranch, setSelectedBranch] = useState("centre");
@@ -247,7 +219,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
     product && CATEGORY_OPTIONS[product.category_id]
       ? CATEGORY_OPTIONS[product.category_id]
       : product
-      ? CATEGORY_OPTIONS["1"] // Par défaut options burger
+      ? CATEGORY_OPTIONS["1"]
       : [];
 
   // Réinitialiser les options quand le produit change ou s'ouvre
@@ -262,7 +234,18 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
       const groups = CATEGORY_OPTIONS[product.category_id] || CATEGORY_OPTIONS["1"];
       groups.forEach((g) => {
         if (g.type === "single" && g.defaultSelected) {
-          initialSingles[g.id] = g.defaultSelected;
+          // Si c'est un burger spécifique, présélectionner le bon type
+          if (product.category_id === "1") {
+            if (product.slug.includes("chicken")) {
+              initialSingles[g.id] = "chicken";
+            } else if (product.slug.includes("zinger")) {
+              initialSingles[g.id] = "zinger";
+            } else {
+              initialSingles[g.id] = "beef";
+            }
+          } else {
+            initialSingles[g.id] = g.defaultSelected;
+          }
         }
       });
       setSingleSelections(initialSingles);
@@ -279,36 +262,37 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
 
   if (!isOpen || !product) return null;
 
-  // Calcul du prix unitaire de base
-  const basePrice = product.promotion_price || product.price;
+  // Calcul du prix unitaire de base :
+  // Le choix du type de burger (ou type de produit) définit directement le prix de base.
+  let currentBasePrice = product.promotion_price || product.price;
 
-  // Calcul des suppléments issus des options uniques
-  let singleExtrasTotal = 0;
   optionGroups.forEach((group) => {
     if (group.type === "single") {
       const selectedId = singleSelections[group.id];
       const opt = group.options.find((o) => o.id === selectedId);
-      if (opt) singleExtrasTotal += opt.price;
+      if (opt && opt.basePrice !== undefined) {
+        currentBasePrice = opt.basePrice;
+      }
     }
   });
 
-  // Calcul des suppléments issus des options avec quantité
+  // Calcul des suppléments issus des options avec quantité (sauces, extras)
   let quantityExtrasTotal = 0;
   Object.entries(optionQuantities).forEach(([key, qty]) => {
     if (qty > 0) {
       const [groupId, optId] = key.split("_");
       const group = optionGroups.find((g) => g.id === groupId);
       const opt = group?.options.find((o) => o.id === optId);
-      if (opt) {
+      if (opt && opt.price) {
         quantityExtrasTotal += opt.price * qty;
       }
     }
   });
 
-  const unitPrice = basePrice + singleExtrasTotal + quantityExtrasTotal;
+  const unitPrice = currentBasePrice + quantityExtrasTotal;
   const totalPrice = unitPrice * quantity;
 
-  // Sélection d'une option unique
+  // Sélection d'une option unique (ex: Type de burger)
   const handleSelectSingle = (groupId: string, optionId: string) => {
     setSingleSelections((prev) => ({
       ...prev,
@@ -316,7 +300,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
     }));
   };
 
-  // Modification de quantité pour une option (sauces, viandes, extras)
+  // Modification de quantité pour une option (sauces, extras)
   const handleUpdateOptionQuantity = (groupId: string, optionId: string, delta: number) => {
     const key = `${groupId}_${optionId}`;
     setOptionQuantities((prev) => {
@@ -351,7 +335,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
             groupTitle: group.title,
             optionId: opt.id,
             name: opt.name,
-            price: opt.price,
+            price: 0, // Inclus dans le prix de base du plat
             quantity: 1,
           });
         }
@@ -365,7 +349,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
               groupTitle: group.title,
               optionId: opt.id,
               name: opt.name,
-              price: opt.price,
+              price: opt.price || 0,
               quantity: qty,
             });
           }
@@ -374,7 +358,10 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
     });
 
     addItem({
-      product,
+      product: {
+        ...product,
+        price: currentBasePrice, // Prix de base déterminé par le type sélectionné
+      },
       quantity,
       branch: {
         id: branchObj.id,
@@ -386,11 +373,10 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
 
     setIsAdded(true);
 
-    // Feedback visuel puis ouverture du panier
+    // Feedback visuel puis fermeture de la modale SANS ouvrir automatiquement le panier
     setTimeout(() => {
       onClose();
-      setIsCartOpen(true);
-    }, 400);
+    }, 350);
   };
 
   return (
@@ -450,20 +436,9 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                 {product.name}
               </h3>
               <div className="text-right">
-                {product.promotion_price ? (
-                  <>
-                    <p className="text-xs text-muted line-through">
-                      {product.price.toLocaleString("fr-FR")} FDJ
-                    </p>
-                    <p className="text-xl font-black text-primary-600">
-                      {product.promotion_price.toLocaleString("fr-FR")} FDJ
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xl font-black text-primary-600">
-                    {product.price.toLocaleString("fr-FR")} FDJ
-                  </p>
-                )}
+                <p className="text-xl font-black text-primary-600">
+                  {currentBasePrice.toLocaleString("fr-FR")} FDJ
+                </p>
               </div>
             </div>
             <p className="text-sm text-muted mt-2 leading-relaxed">
@@ -499,24 +474,14 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
             </div>
           </div>
 
-          {/* Catégories de Personnalisation Réorganisées Horizontalement */}
+          {/* Catégories de Personnalisation : Titre épuré et affichage horizontal */}
           {optionGroups.map((group) => {
             return (
               <div key={group.id} className="space-y-2.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <span>{group.icon}</span>
-                    <span>{group.title}</span>
-                  </span>
-                  {group.type === "single" ? (
-                    <span className="text-[10px] text-muted lowercase font-normal">
-                      1 choix
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-primary-600 font-medium">
-                      quantités réglables (+ / −)
-                    </span>
-                  )}
+                {/* Titre épuré sans mentions explicatives */}
+                <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                  <span>{group.icon}</span>
+                  <span>{group.title}</span>
                 </label>
 
                 {/* Choix affichés horizontalement */}
@@ -529,22 +494,13 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                             key={opt.id}
                             type="button"
                             onClick={() => handleSelectSingle(group.id, opt.id)}
-                            className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all flex items-center gap-1.5 ${
+                            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all flex items-center ${
                               isSelected
                                 ? "border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-600 font-bold shadow-sm ring-1 ring-primary-500"
                                 : "border-border bg-surface hover:bg-surface-hover text-muted hover:text-foreground"
                             }`}
                           >
                             <span>{opt.name}</span>
-                            {opt.price > 0 && (
-                              <span
-                                className={`text-[11px] ${
-                                  isSelected ? "text-primary-600 font-bold" : "text-muted"
-                                }`}
-                              >
-                                +{opt.price} FDJ
-                              </span>
-                            )}
                           </button>
                         );
                       })
@@ -568,28 +524,15 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                                 onClick={() =>
                                   handleUpdateOptionQuantity(group.id, opt.id, 1)
                                 }
-                                className="px-3 py-2 flex items-center gap-2 hover:text-foreground transition-colors"
+                                className="px-3 py-2 flex items-center hover:text-foreground transition-colors"
                               >
-                                <span className="w-4 h-4 rounded-full bg-primary-100 dark:bg-primary-950/60 text-primary-600 font-bold flex items-center justify-center text-xs">
-                                  +
-                                </span>
                                 <span>{opt.name}</span>
-                                {opt.price > 0 && (
-                                  <span className="text-[11px] text-primary-600 font-bold">
-                                    +{opt.price} FDJ
-                                  </span>
-                                )}
                               </button>
                             ) : (
                               <div className="px-2.5 py-1.5 flex items-center gap-2">
                                 <span className="text-foreground">{opt.name}</span>
-                                {opt.price > 0 && (
-                                  <span className="text-[11px] font-bold text-primary-600">
-                                    +{opt.price * qty} FDJ
-                                  </span>
-                                )}
 
-                                {/* Boutons de contrôle de quantité */}
+                                {/* Boutons de contrôle de quantité + et - */}
                                 <div className="flex items-center gap-1 bg-surface border border-border rounded-lg p-0.5 ml-1 shadow-xs">
                                   <button
                                     type="button"
