@@ -73,6 +73,8 @@ export interface OrderCustomerInfo {
   pickupTime?: string;
   // Instructions communes
   instructions?: string;
+  // Mode de paiement
+  paymentMethod?: string;
 }
 
 

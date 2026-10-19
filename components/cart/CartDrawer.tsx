@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   X,
@@ -21,10 +21,22 @@ import {
   CheckCircle2,
   AlertCircle,
   MessageCircle,
+  Wallet,
+  Check,
 } from "lucide-react";
 import { useCart } from "@/lib/context/CartContext";
 import { OrderMode } from "@/types";
 import { DELIVERY_ZONES } from "@/data/deliveryZones";
+
+// Moyens de paiement locaux à Djibouti
+const PAYMENT_METHODS = [
+  { id: "waafi", name: "Waafi", desc: "Telesom / Waafi Mobile", badge: "WAAFI" },
+  { id: "dmoney", name: "D-Money", desc: "Djibouti Telecom", badge: "D-MONEY" },
+  { id: "exipay", name: "Exipay", desc: "Paiement sécurisé", badge: "EXIPAY" },
+  { id: "sabapay", name: "SabaPay", desc: "Banque Saba Islamique", badge: "SABA" },
+  { id: "kakpay", name: "KakPay", desc: "Portefeuille mobile", badge: "KAKPAY" },
+  { id: "cacpay", name: "CacPay", desc: "CAC Bank Mobile", badge: "CACPAY" },
+];
 
 export function CartDrawer() {
   const {
@@ -38,7 +50,10 @@ export function CartDrawer() {
     totalItemsCount,
   } = useCart();
 
-  // Étapes de la commande : panier -> choix du mode & coordonnées -> récapitulatif & confirmation
+  // Référence pour le conteneur de défilement afin de repositionner en haut à chaque étape
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Étapes de la commande : cart -> mode -> summary
   const [step, setStep] = useState<"cart" | "mode" | "summary">("cart");
 
   // Mode de commande sélectionné
@@ -53,17 +68,29 @@ export function CartDrawer() {
   const [pickupTime, setPickupTime] = useState("Au plus vite (~15-20 min)");
   const [instructions, setInstructions] = useState("");
 
+  // Mode de paiement sélectionné (Waafi par défaut)
+  const [selectedPayment, setSelectedPayment] = useState("waafi");
+
   // Gestion des erreurs de validation
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
+
+  // Repositionner automatiquement le défilement tout en haut à chaque changement d'étape
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [step]);
 
   // Bloquer le scroll de la page lorsque le panier est ouvert
   useEffect(() => {
     if (isCartOpen) {
       document.body.style.overflow = "hidden";
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "instant" });
+      }
     } else {
       document.body.style.overflow = "unset";
-      // Réinitialiser l'étape au panier à la fermeture
       setStep("cart");
       setIsOrderSubmitted(false);
       setFormErrors({});
@@ -79,6 +106,14 @@ export function CartDrawer() {
   const selectedZone = DELIVERY_ZONES.find((z) => z.id === deliveryZoneId) || DELIVERY_ZONES[0];
   const deliveryFee = orderMode === "livraison" ? selectedZone.price : 0;
   const finalTotal = subtotal + deliveryFee;
+
+  // Navigation contrôlée avec réinitialisation du défilement
+  const navigateToStep = (newStep: "cart" | "mode" | "summary") => {
+    setStep(newStep);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "instant" });
+    }
+  };
 
   // Validation du formulaire de mode de commande
   const validateModeForm = () => {
@@ -111,13 +146,15 @@ export function CartDrawer() {
   // Passer à l'étape récapitulatif
   const handleProceedToSummary = () => {
     if (validateModeForm()) {
-      setStep("summary");
+      navigateToStep("summary");
     }
   };
 
   // Confirmation finale et envoi de la commande par WhatsApp
   const handleConfirmAndSendWhatsApp = () => {
     if (items.length === 0) return;
+
+    const paymentObj = PAYMENT_METHODS.find((p) => p.id === selectedPayment) || PAYMENT_METHODS[0];
 
     let message = "Bonjour SHAKPOT Djibouti ! 🍔🍟\n\n";
     message += "📋 *NOUVELLE COMMANDE*\n";
@@ -139,6 +176,7 @@ export function CartDrawer() {
     if (customerName.trim()) {
       message += `👤 *Client :* ${customerName.trim()}\n`;
     }
+    message += `💳 *Moyen de paiement :* *${paymentObj.name}*\n`;
     if (instructions.trim()) {
       message += `📝 *Instructions spéciales :* ${instructions.trim()}\n`;
     }
@@ -182,12 +220,12 @@ export function CartDrawer() {
       <div className="relative w-full max-w-lg bg-surface text-foreground shadow-2xl border-l border-border h-full flex flex-col z-10 animate-in slide-in-from-right duration-300">
         
         {/* ===================== EN-TÊTE DU TIROIR ===================== */}
-        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between bg-surface-hover/30">
+        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between bg-surface-hover/30 shrink-0">
           <div className="flex items-center gap-3">
             {step !== "cart" && !isOrderSubmitted && (
               <button
                 type="button"
-                onClick={() => setStep(step === "summary" ? "mode" : "cart")}
+                onClick={() => navigateToStep(step === "summary" ? "mode" : "cart")}
                 className="p-1.5 rounded-xl hover:bg-surface-hover text-muted hover:text-foreground transition-colors mr-1"
                 aria-label="Retour"
               >
@@ -218,7 +256,7 @@ export function CartDrawer() {
                   ? `${totalItemsCount} ${totalItemsCount > 1 ? "articles" : "article"}`
                   : step === "mode"
                   ? "Choisissez comment recevoir votre commande"
-                  : "Vérifiez vos informations"}
+                  : "Vérifiez vos choix et moyen de paiement"}
               </p>
             </div>
           </div>
@@ -245,8 +283,11 @@ export function CartDrawer() {
           </div>
         </div>
 
-        {/* ===================== CONTENU PRINCIPAL ===================== */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {/* ===================== CONTENU PRINCIPAL (DÉFILEMENT GÉRÉ AVEC REF) ===================== */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4"
+        >
           
           {/* ---------------- ÉTAPE 1 : LISTE DES ARTICLES ---------------- */}
           {step === "cart" && (
@@ -326,7 +367,7 @@ export function CartDrawer() {
                       </div>
                     </div>
 
-                    {/* Options sélectionnées (sans affichage individuel de prix) */}
+                    {/* Options sélectionnées (sans prix individuels) */}
                     {item.selectedOptions.length > 0 && (
                       <div className="bg-surface rounded-xl p-2.5 border border-border/60 text-[11px] space-y-1">
                         <div className="flex flex-wrap gap-1.5">
@@ -347,7 +388,7 @@ export function CartDrawer() {
                       </div>
                     )}
 
-                    {/* Sélecteur de Quantité & Sous-total de l'article */}
+                    {/* Sélecteur de Quantité & Sous-total */}
                     <div className="flex items-center justify-between pt-1 border-t border-border/40">
                       <div className="flex items-center gap-2 bg-surface border border-border rounded-full p-1 shadow-sm">
                         <button
@@ -448,7 +489,7 @@ export function CartDrawer() {
                 </div>
               </div>
 
-              {/* Formulaire dynamique selon le mode sélectionné */}
+              {/* Formulaire dynamique selon le mode */}
               <div className="bg-surface-hover/40 border border-border rounded-2xl p-4 sm:p-5 space-y-4">
                 
                 {/* 1. Formulaire SUR PLACE */}
@@ -708,7 +749,7 @@ export function CartDrawer() {
                   </>
                 )}
 
-                {/* Instructions pour le restaurant (communes à tous les modes, facultatif) */}
+                {/* Instructions pour le restaurant */}
                 <div className="pt-2 border-t border-border/60">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
                     <FileText className="w-3.5 h-3.5 text-muted" />
@@ -728,9 +769,9 @@ export function CartDrawer() {
             </div>
           )}
 
-          {/* ---------------- ÉTAPE 3 : RÉCAPITULATIF & CONFIRMATION ---------------- */}
+          {/* ---------------- ÉTAPE 3 : RÉCAPITULATIF, MODE DE PAIEMENT & CONFIRMATION ---------------- */}
           {step === "summary" && (
-            <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="space-y-5 animate-in fade-in duration-200">
               
               {/* Carte Récapitulative du Mode */}
               <div className="bg-primary-50/70 dark:bg-primary-950/40 border border-primary-500/30 rounded-2xl p-4">
@@ -817,6 +858,78 @@ export function CartDrawer() {
                 </div>
               </div>
 
+              {/* ===================== SECTION MODE DE PAIEMENT ===================== */}
+              <div className="bg-surface-hover/40 border border-border rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    <Wallet className="w-4 h-4 text-primary-600" />
+                    <span>Mode de paiement</span>
+                  </label>
+                  <span className="text-xs font-bold text-primary-600">
+                    {PAYMENT_METHODS.find((p) => p.id === selectedPayment)?.name}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-muted">
+                  Sélectionnez le moyen de paiement local que vous utiliserez :
+                </p>
+
+                {/* Grille responsive : 2 colonnes de carrés cliquables */}
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  {PAYMENT_METHODS.map((method) => {
+                    const isSelected = selectedPayment === method.id;
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setSelectedPayment(method.id)}
+                        className={`p-3.5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[82px] relative cursor-pointer group ${
+                          isSelected
+                            ? "border-primary-600 bg-primary-50/80 dark:bg-primary-950/50 shadow-md ring-2 ring-primary-500/20 text-primary-600"
+                            : "border-border bg-surface hover:bg-surface-hover hover:border-primary-500/40 text-foreground"
+                        }`}
+                      >
+                        {/* En-tête du carré avec badge et coche de sélection */}
+                        <div className="flex items-center justify-between w-full">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                            isSelected
+                              ? "bg-primary-600 text-white"
+                              : "bg-surface-hover border border-border text-muted"
+                          }`}>
+                            {method.badge}
+                          </span>
+
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
+                            isSelected
+                              ? "bg-primary-600 border-primary-600 text-white"
+                              : "border-border bg-surface group-hover:border-primary-400"
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </div>
+
+                        {/* Nom du moyen de paiement */}
+                        <div className="mt-2">
+                          <p className={`font-black text-sm sm:text-base leading-tight ${
+                            isSelected ? "text-primary-600" : "text-foreground"
+                          }`}>
+                            {method.name}
+                          </p>
+                          <p className="text-[10px] text-muted truncate mt-0.5">
+                            {method.desc}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Note explicative : aucune transaction automatique simulée */}
+                <p className="text-[11px] text-muted pt-1">
+                  ℹ️ Le règlement s'effectuera via votre application mobile habituelle lors de la livraison ou au comptoir.
+                </p>
+              </div>
+
               {/* Message de succès après confirmation */}
               {isOrderSubmitted && (
                 <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm space-y-2 animate-in zoom-in-95">
@@ -881,7 +994,7 @@ export function CartDrawer() {
             {step === "cart" && (
               <button
                 type="button"
-                onClick={() => setStep("mode")}
+                onClick={() => navigateToStep("mode")}
                 className="w-full py-3.5 px-6 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-primary-600/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 <span>PASSER LA COMMANDE</span>
