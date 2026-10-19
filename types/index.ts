@@ -56,3 +56,23 @@ export interface CartItem {
   totalPrice: number;
 }
 
+export type OrderMode = "sur_place" | "livraison" | "en_route";
+
+export interface OrderCustomerInfo {
+  mode: OrderMode;
+  name: string;
+  phone: string;
+  // Sur place
+  tableNumber?: string;
+  // Livraison
+  deliveryZoneId?: string;
+  deliveryZoneName?: string;
+  deliveryFee: number;
+  deliveryAddress?: string;
+  // En route (à emporter)
+  pickupTime?: string;
+  // Instructions communes
+  instructions?: string;
+}
+
+
