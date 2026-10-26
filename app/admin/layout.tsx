@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
@@ -7,6 +10,15 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
+
+  // Sur la page de connexion, ne pas afficher l'en-tête administratif secondaire
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  // Sur le tableau de bord et les autres pages admin, conserver la disposition actuelle
   return (
     <div className="min-h-screen flex flex-col bg-surface-hover">
       {/* Admin Header (simplifié) */}
@@ -21,7 +33,7 @@ export default function AdminLayout({
           <div className="flex items-center space-x-4">
             <ThemeToggle />
             
-            {/* Bouton de retour au site (Mode maquette, on le simule) */}
+            {/* Bouton de retour au site */}
             <Link 
               href="/"
               className="flex items-center gap-2 text-sm font-medium text-muted hover:text-foreground transition-colors"

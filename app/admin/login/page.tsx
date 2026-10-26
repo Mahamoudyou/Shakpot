@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail } from "lucide-react";
+import Link from "next/link";
+import { Lock, Mail, ArrowLeft } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -29,7 +30,18 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-surface-hover">
+      
+      {/* Bouton modernisé « Retour au restaurant » avec animation subtile au survol */}
+      <Link
+        href="/"
+        className="group inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-surface border border-border hover:border-primary-500/50 text-muted hover:text-foreground text-sm font-semibold shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-x-1 active:scale-95 mb-6"
+      >
+        <ArrowLeft className="w-4 h-4 text-primary-600 transition-transform duration-300 group-hover:-translate-x-1" />
+        <span>Retour au restaurant</span>
+      </Link>
+
+      {/* Carte du Formulaire de Connexion */}
       <div className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl overflow-hidden">
         
         {/* En-tête de la carte */}
