@@ -77,4 +77,19 @@ export interface OrderCustomerInfo {
   paymentMethod?: string;
 }
 
+export interface VariationOption {
+  id: string;
+  name: string;
+  price: number;
+  basePrice?: number;
+}
+
+export interface VariationGroup {
+  id: string;
+  title: string;
+  type: "single" | "multiple_with_quantity";
+  categoryIds: string[];
+  options: VariationOption[];
+}
+
 
