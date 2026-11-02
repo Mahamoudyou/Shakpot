@@ -23,8 +23,28 @@ const MOCK_PRODUCTS = [
   { id: "p2", name: "Tacos Maxi Viande", price: 2000, promotion_price: 1800, category: "Tacos", is_promotion: true },
 ];
 
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  const handleLogout = async () => {
+    try {
+      if (
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("votre-projet")
+      ) {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      }
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("shakpot_admin_user");
+    }
+    router.push("/admin/login");
+  };
 
   const sidebarItems = [
     { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -61,7 +81,10 @@ export default function AdminDashboardPage() {
           </nav>
           
           <div className="pt-4 mt-4 border-t border-border">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-danger hover:bg-danger/10 transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-danger hover:bg-danger/10 transition-colors"
+            >
               <LogOut className="w-5 h-5" />
               Déconnexion
             </button>

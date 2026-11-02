@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, ArrowLeft } from "lucide-react";
 
+import { createClient } from "@/lib/supabase/client";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -17,11 +19,72 @@ export default function AdminLoginPage() {
     setIsLoading(true);
     setError(null);
 
-    // Simulation d'une requête de connexion Supabase (Mock)
+    // 1. Tenter la connexion avec Supabase Auth si configuré
+    try {
+      if (
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("votre-projet")
+      ) {
+        const supabase = createClient();
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (!authError && data?.user) {
+          const role =
+            data.user.user_metadata?.role === "staff" ||
+            data.user.app_metadata?.role === "staff"
+              ? "Staff"
+              : "Administrateur";
+          const name =
+            data.user.user_metadata?.full_name ||
+            data.user.user_metadata?.name ||
+            null;
+
+          localStorage.setItem(
+            "shakpot_admin_user",
+            JSON.stringify({
+              name,
+              email: data.user.email,
+              role,
+            })
+          );
+          setIsLoading(false);
+          router.push("/admin/dashboard");
+          return;
+        }
+      }
+    } catch {
+      // Ignorer si Supabase Auth n'est pas activé
+    }
+
+    // 2. Gestion de l'authentification du projet
     setTimeout(() => {
       setIsLoading(false);
-      // Fausse validation : accepte tout ce qui n'est pas vide pour l'instant
       if (email && password) {
+        const cleanEmail = email.trim();
+        const isStaff = cleanEmail.toLowerCase().includes("staff");
+        const role = isStaff ? "Staff" : "Administrateur";
+        
+        // Extraction du nom réel si disponible dans l'identifiant (ex: prenom.nom@... ou mohamed@...)
+        const namePart = cleanEmail.split("@")[0];
+        const formattedName =
+          namePart &&
+          !["admin", "administrator", "staff", "user"].includes(
+            namePart.toLowerCase()
+          )
+            ? namePart.charAt(0).toUpperCase() + namePart.slice(1)
+            : null;
+
+        localStorage.setItem(
+          "shakpot_admin_user",
+          JSON.stringify({
+            name: formattedName,
+            email: cleanEmail,
+            role,
+          })
+        );
         router.push("/admin/dashboard");
       } else {
         setError("Veuillez remplir tous les champs.");
