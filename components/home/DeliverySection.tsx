@@ -3,13 +3,13 @@ import { PhoneCall, MessageCircle, Clock, Zap, MapPin } from "lucide-react";
 
 export function DeliverySection() {
   // Numéro de téléphone de livraison Shakpot (format international Djibouti +253)
-  const deliveryPhoneNumber = "+25377000000";
-  const displayPhoneNumber = "+253 77 00 00 00";
+  const deliveryPhoneNumber = "+25377377502";
+  const displayPhoneNumber = "+253 773 77 50 2";
 
   const whatsappMessage = encodeURIComponent(
     "Bonjour SHAKPOT ! Je souhaite passer une commande en livraison à Djibouti."
   );
-  const whatsappUrl = `https://wa.me/25377000000?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/25377377502?text=${whatsappMessage}`;
 
   return (
     <section id="livraison" className="py-16 md:py-24 bg-background">

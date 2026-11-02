@@ -46,10 +46,10 @@ export function Footer() {
                 <Phone className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                 <div className="flex items-center gap-2">
                   <a 
-                    href="tel:+25377000000" 
+                    href="tel:+25377377502" 
                     className="hover:text-white hover:underline transition-colors font-medium"
                   >
-                    77 00 00 00
+                    773 77 50 2
                   </a>
                   <span>/</span>
                   <a 
@@ -78,7 +78,7 @@ export function Footer() {
               
               {/* WhatsApp */}
               <a 
-                href="https://wa.me/25377000000" 
+                href="https://wa.me/25377377502" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-emerald-500 hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105"

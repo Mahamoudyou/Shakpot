@@ -156,54 +156,76 @@ export function CartDrawer() {
 
     const paymentObj = PAYMENT_METHODS.find((p) => p.id === selectedPayment) || PAYMENT_METHODS[0];
 
-    let message = "Bonjour SHAKPOT Djibouti ! 🍔🍟\n\n";
-    message += "📋 *NOUVELLE COMMANDE*\n";
-    message += "----------------------------\n";
+    let message = "🍔 *SHAKPOT DJIBOUTI - NOUVELLE COMMANDE*\n";
+    message += "═══════════════════════════\n\n";
 
+    // Informations Client
+    message += "👤 *INFORMATIONS CLIENT*\n";
+    message += `• *Nom :* ${customerName.trim() ? customerName.trim() : "Non précisé"}\n`;
+    message += `• *Téléphone :* ${customerPhone.trim()}\n\n`;
+
+    // Mode de commande
+    message += "📍 *MODE DE COMMANDE*\n";
     if (orderMode === "sur_place") {
-      message += `🍽️ *Mode : SUR PLACE*\n`;
-      message += `🪑 *Table N° :* ${tableNumber.trim()}\n`;
+      message += "• *Mode :* Sur place 🍽️\n";
+      message += `• *Numéro de table :* N° ${tableNumber.trim()}\n`;
     } else if (orderMode === "livraison") {
-      message += `🛵 *Mode : LIVRAISON*\n`;
-      message += `📍 *Zone :* ${selectedZone.name} (+${deliveryFee} FDJ)\n`;
-      message += `🏠 *Adresse :* ${deliveryAddress.trim()}\n`;
+      message += "• *Mode :* Livraison 🛵\n";
+      message += `• *Zone de livraison :* ${selectedZone.name}\n`;
+      message += `• *Adresse exacte :* ${deliveryAddress.trim()}\n`;
+      message += `• *Frais de livraison :* ${deliveryFee.toLocaleString("fr-FR")} FDJ\n`;
     } else {
-      message += `🥡 *Mode : EN ROUTE (À emporter)*\n`;
-      message += `⏰ *Heure de retrait :* ${pickupTime}\n`;
+      message += "• *Mode :* À emporter 🥡\n";
+      message += `• *Heure de retrait souhaitée :* ${pickupTime}\n`;
     }
+    message += "\n";
 
-    message += `📞 *Téléphone :* ${customerPhone.trim()}\n`;
-    if (customerName.trim()) {
-      message += `👤 *Client :* ${customerName.trim()}\n`;
-    }
-    message += `💳 *Moyen de paiement :* *${paymentObj.name}*\n`;
-    if (instructions.trim()) {
-      message += `📝 *Instructions spéciales :* ${instructions.trim()}\n`;
-    }
-
-    message += "\n🍽️ *DÉTAIL DES ARTICLES* :\n";
+    // Liste complète des produits commandés & personnalisations
+    message += "🛍️ *DÉTAIL DES ARTICLES COMMANDÉS*\n";
+    message += "───────────────────────────\n";
     items.forEach((item, index) => {
-      message += `${index + 1}. *${item.product.name}* x${item.quantity}\n`;
-      message += `   📍 Préparation : ${item.branch.name}\n`;
-      if (item.selectedOptions.length > 0) {
-        const optionsStr = item.selectedOptions
-          .map((opt) => `${opt.name}${opt.quantity > 1 ? ` (x${opt.quantity})` : ""}`)
-          .join(", ");
-        message += `   ➕ Options : ${optionsStr}\n`;
+      message += `${index + 1}. *${item.product.name}* (Quantité : ${item.quantity})\n`;
+      message += `   📍 *Préparation :* ${item.branch.name}\n`;
+
+      if (item.selectedOptions && item.selectedOptions.length > 0) {
+        // Regrouper par type de personnalisation (Types de burger, Sauces, Extras & Suppléments)
+        const groupedOptions = item.selectedOptions.reduce((acc, opt) => {
+          const group = opt.groupTitle || "Options / Suppléments";
+          if (!acc[group]) acc[group] = [];
+          const optStr = `${opt.name}${opt.quantity > 1 ? ` (x${opt.quantity})` : ""}${opt.price > 0 ? ` (+${(opt.price * opt.quantity).toLocaleString("fr-FR")} FDJ)` : ""}`;
+          acc[group].push(optStr);
+          return acc;
+        }, {} as Record<string, string[]>);
+
+        Object.entries(groupedOptions).forEach(([groupTitle, opts]) => {
+          message += `   ▫️ *${groupTitle} :* ${opts.join(", ")}\n`;
+        });
       }
-      message += `   💰 Prix : ${item.totalPrice.toLocaleString("fr-FR")} FDJ\n\n`;
+
+      message += `   💰 *Sous-total :* ${item.totalPrice.toLocaleString("fr-FR")} FDJ\n\n`;
     });
 
-    message += "----------------------------\n";
-    message += `Sous-total articles : ${subtotal.toLocaleString("fr-FR")} FDJ\n`;
-    if (orderMode === "livraison") {
-      message += `Frais de livraison (${selectedZone.name}) : ${deliveryFee.toLocaleString("fr-FR")} FDJ\n`;
+    // Instructions particulières & allergies
+    if (instructions.trim()) {
+      message += "📝 *INSTRUCTIONS PARTICULIÈRES & ALLERGIES*\n";
+      message += `• ${instructions.trim()}\n\n`;
     }
-    message += `💰 *TOTAL FINAL : ${finalTotal.toLocaleString("fr-FR")} FDJ*\n\n`;
-    message += "Merci de me confirmer la prise en charge de ma commande !";
+
+    // Récapitulatif financier & paiement
+    message += "💳 *PAIEMENT & MONTANT TOTAL*\n";
+    message += "───────────────────────────\n";
+    message += `• *Sous-total des produits :* ${subtotal.toLocaleString("fr-FR")} FDJ\n`;
+    if (orderMode === "livraison") {
+      message += `• *Frais de livraison (${selectedZone.name}) :* ${deliveryFee.toLocaleString("fr-FR")} FDJ\n`;
+    }
+    message += `• *MONTANT TOTAL :* *${finalTotal.toLocaleString("fr-FR")} FDJ*\n`;
+    message += `• *Mode de paiement :* *${paymentObj.name}*\n\n`;
+
+    message += "═══════════════════════════\n";
+    message += "Merci de bien vouloir confirmer la prise en charge de ma commande ! 🙏";
 
     const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/25377000000?text=${encoded}`, "_blank");
+    window.open(`https://wa.me/25377377502?text=${encoded}`, "_blank");
 
     setIsOrderSubmitted(true);
   };
@@ -469,7 +491,7 @@ export function CartDrawer() {
                     <span className="text-xs sm:text-sm">Livraison</span>
                   </button>
 
-                  {/* Option 3 : En route (À emporter) */}
+                  {/* Option 3 : À emporter */}
                   <button
                     type="button"
                     onClick={() => {
@@ -483,7 +505,7 @@ export function CartDrawer() {
                     }`}
                   >
                     <Package className="w-5 h-5" />
-                    <span className="text-xs sm:text-sm">En route</span>
+                    <span className="text-xs sm:text-sm">À emporter</span>
                   </button>
 
                 </div>
@@ -676,7 +698,7 @@ export function CartDrawer() {
                   </>
                 )}
 
-                {/* 3. Formulaire EN ROUTE (À emporter) */}
+                {/* 3. Formulaire À EMPORTER */}
                 {orderMode === "en_route" && (
                   <>
                     <div className="flex items-center gap-2 pb-2 border-b border-border text-primary-600 font-bold text-sm">
@@ -788,7 +810,7 @@ export function CartDrawer() {
                       ? "Commande Sur place"
                       : orderMode === "livraison"
                       ? "Commande en Livraison"
-                      : "Commande En route (À emporter)"}
+                      : "Commande À emporter"}
                   </span>
                 </div>
 
@@ -1020,7 +1042,7 @@ export function CartDrawer() {
                 className="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 <MessageCircle className="w-5 h-5 fill-current" />
-                <span>CONFIRMER SUR WHATSAPP</span>
+                <span>Envoyer sur WhatsApp</span>
               </button>
             )}
 
