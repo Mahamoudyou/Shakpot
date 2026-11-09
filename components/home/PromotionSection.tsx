@@ -1,37 +1,19 @@
+"use client";
+
+import { useMemo } from "react";
 import { ArrowRight, Tag } from "lucide-react";
 import Link from "next/link";
-import { Product } from "@/types";
-
-// Mock des promotions (à remplacer par appel API Supabase plus tard : where is_promotion = true)
-const MOCK_PROMOTIONS: Product[] = [
-  {
-    id: "p2",
-    name: "Tacos Maxi Viande",
-    slug: "tacos-maxi-viande",
-    description: "Poulet mariné, viande hachée, frites, sauce fromagère onctueuse.",
-    price: 2000,
-    promotion_price: 1800,
-    category_id: "2",
-    image_url: "/images/tacos-maxi.jpg",
-    is_available: true,
-    is_promotion: true,
-  },
-  {
-    id: "p6",
-    name: "Menu Burger Double",
-    slug: "menu-burger-double",
-    description: "Double cheeseburger + frites + boisson au choix.",
-    price: 2500,
-    promotion_price: 2100,
-    category_id: "1",
-    image_url: "/images/hero-burger.jpg",
-    is_available: true,
-    is_promotion: true,
-  },
-];
+import { useRestaurantData } from "@/lib/context/RestaurantContext";
 
 export function PromotionSection() {
-  if (MOCK_PROMOTIONS.length === 0) return null;
+  const { products } = useRestaurantData();
+
+  // Produits configurés en promotion dans l'administration
+  const activePromotions = useMemo(() => {
+    return products.filter((p) => p.is_promotion && p.promotion_price);
+  }, [products]);
+
+  if (activePromotions.length === 0) return null;
 
   return (
     <section id="promotions" className="py-16 md:py-24 bg-primary-600 dark:bg-primary-900/50">
@@ -57,7 +39,7 @@ export function PromotionSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {MOCK_PROMOTIONS.map((promo) => (
+          {activePromotions.map((promo) => (
             <div 
               key={promo.id} 
               className="bg-white dark:bg-surface rounded-2xl overflow-hidden shadow-xl flex flex-col sm:flex-row transform hover:-translate-y-1 transition-transform duration-300"
@@ -98,9 +80,12 @@ export function PromotionSection() {
                       {promo.price} FDJ
                     </span>
                   )}
-                  <button className="ml-auto px-4 py-2 bg-foreground text-background rounded-full font-medium hover:bg-muted transition-colors text-sm">
+                  <Link
+                    href="#menu"
+                    className="ml-auto px-4 py-2 bg-foreground text-background rounded-full font-medium hover:bg-muted transition-colors text-sm"
+                  >
                     Commander
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

@@ -1,97 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
-import { Category, Product } from "@/types";
+import { Product } from "@/types";
+import { useRestaurantData } from "@/lib/context/RestaurantContext";
 import { ProductCard } from "./ProductCard";
 import { ProductModal } from "./ProductModal";
 
-// --- DONNÉES TEMPORAIRES (Mocks) ---
-const MOCK_CATEGORIES: Category[] = [
-  { id: "all", name: "Tous", slug: "tous", display_order: 0 },
-  { id: "1", name: "Burgers", slug: "burgers", display_order: 1 },
-  { id: "2", name: "Tacos", slug: "tacos", display_order: 2 },
-  { id: "3", name: "Sandwichs", slug: "sandwichs", display_order: 3 },
-  { id: "4", name: "Boissons", slug: "boissons", display_order: 4 },
-];
-
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: "p1",
-    name: "Classic Cheeseburger",
-    slug: "classic-cheeseburger",
-    description: "Steak haché de bœuf, double cheddar fondu, salade, tomate, sauce maison.",
-    price: 600,
-    category_id: "1",
-    image_url: "/images/hero-burger.jpg",
-    is_available: true,
-    is_promotion: false,
-  },
-  {
-    id: "p2",
-    name: "Tacos Maxi Viande",
-    slug: "tacos-maxi-viande",
-    description: "Poulet mariné, viande hachée, frites, sauce fromagère onctueuse.",
-    price: 1800,
-    category_id: "2",
-    image_url: "/images/tacos-maxi.jpg",
-    is_available: true,
-    is_promotion: false,
-  },
-  {
-    id: "p3",
-    name: "Chicken Burger",
-    slug: "chicken-burger",
-    description: "Poulet pané croustillant, cheddar, salade, mayonnaise.",
-    price: 500,
-    category_id: "1",
-    image_url: "/images/hero-burger.jpg",
-    is_available: true,
-    is_promotion: false,
-  },
-  {
-    id: "p4",
-    name: "Sandwich Kefta",
-    slug: "sandwich-kefta",
-    description: "Pain baguette, kefta grillée, oignons, frites, sauce au choix.",
-    price: 1000,
-    category_id: "3",
-    image_url: "/images/sandwich-kefta.jpg",
-    is_available: true,
-    is_promotion: false,
-  },
-  {
-    id: "p5",
-    name: "Coca-Cola",
-    slug: "coca-cola",
-    description: "Canette 33cl bien fraîche, servie avec glaçons et citron.",
-    price: 300,
-    category_id: "4",
-    image_url: "/images/coca-cola.jpg",
-    is_available: true,
-    is_promotion: false,
-  },
-];
-
 export function MenuSection() {
+  const { categories, products } = useRestaurantData();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Filtrage des produits selon la catégorie et la recherche
-  const filteredProducts = MOCK_PRODUCTS.filter((product) => {
-    // 1. Filtre par catégorie
-    const matchesCategory =
-      activeCategory === "all" || product.category_id === activeCategory;
+  // Trier les catégories selon l'ordre d'affichage (display_order)
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => a.display_order - b.display_order);
+  }, [categories]);
 
-    // 2. Filtre par recherche (titre ou description)
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchLower) ||
-      product.description.toLowerCase().includes(searchLower);
+  // Filtrage des produits selon la catégorie active et la recherche
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      // 1. Filtre par catégorie
+      const matchesCategory =
+        activeCategory === "all" || product.category_id === activeCategory;
 
-    return matchesCategory && matchesSearch;
-  });
+      // 2. Filtre par recherche (titre ou description)
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchLower) ||
+        product.description.toLowerCase().includes(searchLower);
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [products, activeCategory, searchQuery]);
 
   return (
     <section id="menu" className="scroll-mt-16 py-16 md:py-24 bg-surface-hover">
@@ -126,7 +68,20 @@ export function MenuSection() {
 
           {/* Filtres par catégories (Scroll horizontal sur mobile) */}
           <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide gap-3">
-            {MOCK_CATEGORIES.map((category) => (
+            {/* Bouton Tous */}
+            <button
+              onClick={() => setActiveCategory("all")}
+              className={`whitespace-nowrap px-6 py-2 rounded-full font-medium transition-colors border ${
+                activeCategory === "all"
+                  ? "bg-primary-600 text-white border-primary-600 shadow-md"
+                  : "bg-surface text-muted border-border hover:bg-border/50"
+              }`}
+            >
+              Tous
+            </button>
+
+            {/* Catégories dynamiques respectant le nouvel ordre d'affichage */}
+            {sortedCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}

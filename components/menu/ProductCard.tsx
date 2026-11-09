@@ -6,10 +6,16 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onSelect }: ProductCardProps) {
+  const isAvailable = product.is_available !== false;
+
   return (
     <div 
       onClick={() => onSelect && onSelect(product)}
-      className="group bg-surface rounded-2xl overflow-hidden border border-border hover:border-primary-500/40 hover:shadow-xl transition-all duration-300 flex flex-col h-full relative cursor-pointer transform hover:-translate-y-1"
+      className={`group bg-surface rounded-2xl overflow-hidden border transition-all duration-300 flex flex-col h-full relative cursor-pointer transform hover:-translate-y-1 ${
+        isAvailable
+          ? "border-border hover:border-primary-500/40 hover:shadow-xl"
+          : "border-border/60 opacity-80 hover:border-rose-400/40"
+      }`}
     >
       
       {/* Badge Promotion */}
@@ -19,8 +25,22 @@ export function ProductCard({ product, onSelect }: ProductCardProps) {
         </div>
       )}
 
+      {/* Badge Statut de stock */}
+      {!isAvailable ? (
+        <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 z-10 bg-rose-600 text-white text-[10px] sm:text-xs font-black px-2.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1">
+          <span>Rupture de stock</span>
+        </div>
+      ) : (
+        <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 z-10 bg-emerald-600/90 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full shadow-xs backdrop-blur-xs flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          <span>En stock</span>
+        </div>
+      )}
+
       {/* Image */}
-      <div className="aspect-[4/3] bg-muted/20 relative flex items-center justify-center overflow-hidden">
+      <div className={`aspect-[4/3] bg-muted/20 relative flex items-center justify-center overflow-hidden ${
+        !isAvailable ? "grayscale-[40%]" : ""
+      }`}>
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img 
@@ -60,6 +80,13 @@ export function ProductCard({ product, onSelect }: ProductCardProps) {
               </span>
             )}
           </div>
+
+          {/* Indicateur textuel de disponibilité */}
+          <span className={`text-[11px] font-bold ${
+            isAvailable ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+          }`}>
+            {isAvailable ? "Disponible" : "Indisponible"}
+          </span>
         </div>
       </div>
     </div>

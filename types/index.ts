@@ -88,6 +88,7 @@ export interface VariationGroup {
   id: string;
   title: string;
   type: "single" | "multiple_with_quantity";
+  isRequired?: boolean;
   categoryIds: string[];
   options: VariationOption[];
 }

@@ -38,6 +38,7 @@ export function VariationsTab({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVariation, setEditingVariation] = useState<VariationGroup | null>(null);
   const [title, setTitle] = useState("");
+  const [isRequired, setIsRequired] = useState(false);
   const [type, setType] = useState<"single" | "multiple_with_quantity">("multiple_with_quantity");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [optionsList, setOptionsList] = useState<{ name: string; price: number }[]>([
@@ -52,6 +53,7 @@ export function VariationsTab({
   const handleOpenAdd = () => {
     setEditingVariation(null);
     setTitle("");
+    setIsRequired(false);
     setType("multiple_with_quantity");
     setSelectedCategoryIds(categories.length > 0 ? [categories[0].id] : []);
     setOptionsList([
@@ -66,6 +68,7 @@ export function VariationsTab({
   const handleOpenEdit = (v: VariationGroup) => {
     setEditingVariation(v);
     setTitle(v.title);
+    setIsRequired(Boolean(v.isRequired));
     setType(v.type);
     setSelectedCategoryIds(v.categoryIds || []);
     setOptionsList(
@@ -136,6 +139,7 @@ export function VariationsTab({
         ...editingVariation,
         title: title.trim(),
         type,
+        isRequired,
         categoryIds: selectedCategoryIds,
         options: validOptions,
       });
@@ -143,6 +147,7 @@ export function VariationsTab({
       onAddVariation({
         title: title.trim(),
         type,
+        isRequired,
         categoryIds: selectedCategoryIds,
         options: validOptions,
       });
@@ -283,6 +288,16 @@ export function VariationsTab({
                       <span className="text-[10px] text-muted ml-1">
                         ({variation.type === "single" ? "Choix unique" : "Choix multiple"})
                       </span>
+
+                      {variation.isRequired ? (
+                        <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] uppercase tracking-wider">
+                          * Obligatoire
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md bg-surface-hover border border-border text-muted font-bold text-[10px]">
+                          Facultatif
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -381,6 +396,23 @@ export function VariationsTab({
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase font-semibold"
                   autoFocus
                 />
+              </div>
+
+              {/* Case à cocher Obligatoire */}
+              <div className="flex items-center gap-2.5 pt-0.5">
+                <input
+                  type="checkbox"
+                  id="variation-required-checkbox"
+                  checked={isRequired}
+                  onChange={(e) => setIsRequired(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 border-border focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                />
+                <label
+                  htmlFor="variation-required-checkbox"
+                  className="text-xs font-bold text-foreground cursor-pointer select-none"
+                >
+                  Obligatoire
+                </label>
               </div>
 
               {/* Type de sélection */}

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/lib/context/CartContext";
+import { RestaurantProvider } from "@/lib/context/RestaurantContext";
 import { AppShell } from "@/components/layout/AppShell";
 
 const inter = Inter({
@@ -31,9 +32,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CartProvider>
-            <AppShell>{children}</AppShell>
-          </CartProvider>
+          <RestaurantProvider>
+            <CartProvider>
+              <AppShell>{children}</AppShell>
+            </CartProvider>
+          </RestaurantProvider>
         </ThemeProvider>
       </body>
     </html>
