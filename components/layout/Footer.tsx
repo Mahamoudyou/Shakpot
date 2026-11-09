@@ -167,7 +167,7 @@ export function Footer() {
 
         </div>
 
-        {/* Section Panier en bas de page, à proximité immédiate de "Powered by Netlify" */}
+        {/* Section Panier en bas de page */}
         <div id="panier" className="mb-12 p-6 sm:p-7 rounded-3xl bg-neutral-900/90 border border-neutral-800 shadow-2xl backdrop-blur-md">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
             <div className="flex items-center gap-3.5">
@@ -261,7 +261,7 @@ export function Footer() {
           )}
         </div>
 
-        {/* Pied de page inférieur (Centré, net, minimaliste avec mention Powered by Netlify) */}
+        {/* Pied de page inférieur (Centré, net, minimaliste) */}
         <div className="pt-8 border-t border-neutral-800/80 flex flex-col items-center justify-center gap-3 text-center">
           <div className="flex items-center gap-4 text-xs text-neutral-400">
             <Link 
@@ -271,14 +271,6 @@ export function Footer() {
               <LinkIcon className="w-3.5 h-3.5 text-primary-500" />
               <span>Conditions d&apos;utilisation</span>
             </Link>
-            
-            <span>•</span>
-
-            {/* Mention Powered by Netlify */}
-            <span className="inline-flex items-center gap-1.5 text-neutral-300 font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#00C7B7]" />
-              <span>Powered by Netlify</span>
-            </span>
           </div>
           
           <p className="text-xs text-neutral-500">
