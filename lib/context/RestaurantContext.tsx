@@ -1,9 +1,30 @@
-"use client";
+﻿"use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Category, Product, VariationGroup } from "@/types";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 
-// ==================== DONNÉES PAR DÉFAUT ====================
+// ==================== CONFIGURATION SUPABASE ====================
+const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
+
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  return (
+    url.length > 0 &&
+    !url.includes("votre-projet") &&
+    !url.includes("mock.supabase.co") &&
+    url.startsWith("https://")
+  );
+}
+
+// Helper pour obtenir un client Supabase non-typÃ© (Ã©vite les erreurs never sur les nouvelles tables)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getDb(): any {
+  return createSupabaseClient();
+}
+
+// ==================== DONNÃ‰ES PAR DÃ‰FAUT ====================
 export const INITIAL_CATEGORIES: Category[] = [
   { id: "1", name: "Burgers", slug: "burgers", display_order: 1 },
   { id: "2", name: "Tacos", slug: "tacos", display_order: 2 },
@@ -34,11 +55,11 @@ export const INITIAL_VARIATIONS: VariationGroup[] = [
     isRequired: false,
     categoryIds: ["1", "2", "3"],
     options: [
-      { id: "s1", name: "Sauce Algérienne", price: 0 },
-      { id: "s2", name: "Sauce Samouraï", price: 0 },
+      { id: "s1", name: "Sauce AlgÃ©rienne", price: 0 },
+      { id: "s2", name: "Sauce SamouraÃ¯", price: 0 },
       { id: "s3", name: "Sauce Barbecue", price: 0 },
       { id: "s4", name: "Sauce Andalouse", price: 0 },
-      { id: "s5", name: "Sauce Fromagère", price: 0 },
+      { id: "s5", name: "Sauce FromagÃ¨re", price: 0 },
       { id: "s6", name: "Sauce Shakpot", price: 100 },
       { id: "s7", name: "Mayonnaise", price: 0 },
       { id: "s8", name: "Ketchup", price: 0 },
@@ -46,17 +67,17 @@ export const INITIAL_VARIATIONS: VariationGroup[] = [
   },
   {
     id: "v3",
-    title: "EXTRAS ET SUPPLÉMENTS",
+    title: "EXTRAS ET SUPPLÃ‰MENTS",
     type: "multiple_with_quantity",
     isRequired: false,
     categoryIds: ["1", "2"],
     options: [
       { id: "e1", name: "Double Cheddar fondu", price: 200 },
       { id: "e2", name: "Frites croustillantes", price: 300 },
-      { id: "e3", name: "Oignons caramélisés", price: 150 },
-      { id: "e4", name: "Jalapeños piments", price: 100 },
-      { id: "e5", name: "Gratiné Cheddar au four", price: 250 },
-      { id: "e6", name: "Canette fraîche 33cl", price: 300 },
+      { id: "e3", name: "Oignons caramÃ©lisÃ©s", price: 150 },
+      { id: "e4", name: "JalapeÃ±os piments", price: 100 },
+      { id: "e5", name: "GratinÃ© Cheddar au four", price: 250 },
+      { id: "e6", name: "Canette fraÃ®che 33cl", price: 300 },
     ],
   },
   {
@@ -89,7 +110,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: "p1",
     name: "Classic Cheeseburger",
     slug: "classic-cheeseburger",
-    description: "Steak haché de bœuf, double cheddar fondu, salade, tomate, sauce maison.",
+    description: "Steak hachÃ© de bÅ“uf, double cheddar fondu, salade, tomate, sauce maison.",
     price: 600,
     category_id: "1",
     image_url: "/images/hero-burger.jpg",
@@ -100,7 +121,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: "p2",
     name: "Tacos Maxi Viande",
     slug: "tacos-maxi-viande",
-    description: "Poulet mariné, viande hachée, frites, sauce fromagère onctueuse.",
+    description: "Poulet marinÃ©, viande hachÃ©e, frites, sauce fromagÃ¨re onctueuse.",
     price: 1800,
     promotion_price: 1600,
     category_id: "2",
@@ -112,7 +133,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: "p3",
     name: "Chicken Burger",
     slug: "chicken-burger",
-    description: "Poulet pané croustillant, cheddar, salade, mayonnaise.",
+    description: "Poulet panÃ© croustillant, cheddar, salade, mayonnaise.",
     price: 500,
     category_id: "1",
     image_url: "/images/hero-burger.jpg",
@@ -123,7 +144,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: "p4",
     name: "Sandwich Kefta",
     slug: "sandwich-kefta",
-    description: "Pain baguette, kefta grillée, oignons, frites, sauce au choix.",
+    description: "Pain baguette, kefta grillÃ©e, oignons, frites, sauce au choix.",
     price: 1000,
     category_id: "3",
     image_url: "/images/sandwich-kefta.jpg",
@@ -134,7 +155,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: "p5",
     name: "Coca-Cola",
     slug: "coca-cola",
-    description: "Canette 33cl bien fraîche, servie avec glaçons et citron.",
+    description: "Canette 33cl bien fraÃ®che, servie avec glaÃ§ons et citron.",
     price: 300,
     category_id: "4",
     image_url: "/images/coca-cola.jpg",
@@ -143,7 +164,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
 ];
 
-// Clés localStorage
+// ClÃ©s localStorage
 const STORAGE_KEYS = {
   CATEGORIES: "shakpot_categories",
   VARIATIONS: "shakpot_variations",
@@ -156,7 +177,7 @@ interface RestaurantContextType {
   products: Product[];
   isHydrated: boolean;
 
-  // Catégories
+  // CatÃ©gories
   addCategory: (cat: Omit<Category, "id">) => Category;
   updateCategory: (cat: Category) => void;
   deleteCategory: (catId: string) => void;
@@ -172,7 +193,7 @@ interface RestaurantContextType {
   deleteProduct: (pId: string) => void;
   toggleProductAvailability: (pId: string) => void;
 
-  // Réinitialisation
+  // RÃ©initialisation
   resetToDefaults: () => void;
 }
 
@@ -184,8 +205,89 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Charger depuis localStorage au montage
-  const loadFromStorage = useCallback(() => {
+  // Charger depuis Supabase ou localStorage au montage
+  const loadFromStorage = useCallback(async () => {
+    if (isSupabaseConfigured()) {
+      // ============ MODE SUPABASE ============
+      try {
+        const supabase = getDb();
+
+        const [catsRes, varsRes, prodsRes] = await Promise.all([
+          supabase
+            .from("categories")
+            .select("*")
+            .eq("restaurant_id", RESTAURANT_ID)
+            .order("display_order", { ascending: true }),
+          supabase
+            .from("variation_groups")
+            .select("*, variation_options(*)")
+            .eq("restaurant_id", RESTAURANT_ID),
+          supabase
+            .from("products")
+            .select("*")
+            .eq("restaurant_id", RESTAURANT_ID)
+            .order("created_at", { ascending: true }),
+        ]);
+
+        if (catsRes.data && catsRes.data.length > 0) {
+          setCategories(
+            catsRes.data.map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              slug: c.slug,
+              display_order: c.display_order,
+              image_url: c.image_url,
+            }))
+          );
+        }
+
+        if (varsRes.data && varsRes.data.length > 0) {
+          setVariations(
+            varsRes.data.map((v: any) => ({
+              id: v.id,
+              title: v.title,
+              type: v.type,
+              isRequired: v.is_required ?? false,
+              categoryIds: v.category_ids ?? [],
+              options: (v.variation_options ?? []).map((o: any) => ({
+                id: o.id,
+                name: o.name,
+                price: o.price_adjustment ?? 0,
+                basePrice: o.base_price,
+              })),
+            }))
+          );
+        }
+
+        if (prodsRes.data && prodsRes.data.length > 0) {
+          setProducts(
+            prodsRes.data.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              description: p.description ?? "",
+              price: p.price,
+              category_id: p.category_id,
+              image_url: p.image_url,
+              is_available: p.is_available ?? true,
+              is_promotion: p.is_promotion ?? false,
+              promotion_price: p.promotion_price,
+            }))
+          );
+        }
+      } catch (e) {
+        console.error("Erreur Supabase, fallback localStorage :", e);
+        loadFromLocalStorage();
+      } finally {
+        setIsHydrated(true);
+      }
+    } else {
+      // ============ MODE LOCALSTORAGE ============
+      loadFromLocalStorage();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadFromLocalStorage = () => {
     try {
       const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (storedCats) {
@@ -211,16 +313,16 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         }
       }
     } catch (e) {
-      console.error("Erreur de chargement des données restaurant :", e);
+      console.error("Erreur de chargement des donnÃ©es restaurant :", e);
     } finally {
       setIsHydrated(true);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadFromStorage();
 
-    // Écouter les changements multi-onglets / inter-fenêtres
+    // Ã‰couter les changements multi-onglets / inter-fenÃªtres
     const handleStorageChange = (e: StorageEvent) => {
       if (
         e.key === STORAGE_KEYS.CATEGORIES ||
@@ -251,7 +353,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
-  // ==================== ACTIONS CATÉGORIES ====================
+  // ==================== ACTIONS CATÃ‰GORIES ====================
   const addCategory = (catData: Omit<Category, "id">): Category => {
     const newCat: Category = {
       ...catData,
@@ -260,6 +362,18 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = [...categories, newCat];
     setCategories(updated);
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+    // Supabase async (fire & forget)
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("categories").insert({
+        id: newCat.id,
+        restaurant_id: RESTAURANT_ID,
+        name: newCat.name,
+        slug: newCat.slug,
+        display_order: newCat.display_order ?? 0,
+        image_url: newCat.image_url,
+      }).then(({ error }: { error: any }) => { if (error) console.warn("Supabase addCategory:", error.message); });
+    }
     triggerSync();
     return newCat;
   };
@@ -268,6 +382,15 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = categories.map((c) => (c.id === cat.id ? cat : c));
     setCategories(updated);
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("categories").update({
+        name: cat.name,
+        slug: cat.slug,
+        display_order: cat.display_order ?? 0,
+        image_url: cat.image_url,
+      }).eq("id", cat.id).then(({ error }: { error: any }) => { if (error) console.warn("Supabase updateCategory:", error.message); });
+    }
     triggerSync();
   };
 
@@ -275,6 +398,10 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = categories.filter((c) => c.id !== catId);
     setCategories(updated);
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("categories").delete().eq("id", catId).then(({ error }: { error: any }) => { if (error) console.warn("Supabase deleteCategory:", error.message); });
+    }
     triggerSync();
   };
 
@@ -287,6 +414,30 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = [...variations, newVar];
     setVariations(updated);
     localStorage.setItem(STORAGE_KEYS.VARIATIONS, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("variation_groups").insert({
+        id: newVar.id,
+        restaurant_id: RESTAURANT_ID,
+        title: newVar.title,
+        type: newVar.type,
+        is_required: newVar.isRequired ?? false,
+        category_ids: newVar.categoryIds ?? [],
+      }).then(async ({ error }: { error: any }) => {
+        if (error) { console.warn("Supabase addVariation group:", error.message); return; }
+        if (newVar.options && newVar.options.length > 0) {
+          const opts = newVar.options.map(o => ({
+            id: o.id,
+            variation_group_id: newVar.id,
+            name: o.name,
+            price_adjustment: o.price ?? 0,
+            base_price: o.basePrice,
+          }));
+          const { error: optsErr } = await supabase.from("variation_options").insert(opts);
+          if (optsErr) console.warn("Supabase addVariation options:", optsErr.message);
+        }
+      });
+    }
     triggerSync();
     return newVar;
   };
@@ -295,6 +446,15 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = variations.map((item) => (item.id === v.id ? v : item));
     setVariations(updated);
     localStorage.setItem(STORAGE_KEYS.VARIATIONS, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("variation_groups").update({
+        title: v.title,
+        type: v.type,
+        is_required: v.isRequired ?? false,
+        category_ids: v.categoryIds ?? [],
+      }).eq("id", v.id).then(({ error }: { error: any }) => { if (error) console.warn("Supabase updateVariation:", error.message); });
+    }
     triggerSync();
   };
 
@@ -302,6 +462,10 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = variations.filter((item) => item.id !== vId);
     setVariations(updated);
     localStorage.setItem(STORAGE_KEYS.VARIATIONS, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("variation_groups").delete().eq("id", vId).then(({ error }: { error: any }) => { if (error) console.warn("Supabase deleteVariation:", error.message); });
+    }
     triggerSync();
   };
 
@@ -314,6 +478,22 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = [...products, newProd];
     setProducts(updated);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("products").insert({
+        id: newProd.id,
+        restaurant_id: RESTAURANT_ID,
+        name: newProd.name,
+        slug: newProd.slug,
+        description: newProd.description ?? "",
+        price: newProd.price,
+        category_id: newProd.category_id,
+        image_url: newProd.image_url,
+        is_available: newProd.is_available ?? true,
+        is_promotion: newProd.is_promotion ?? false,
+        promotion_price: newProd.promotion_price ?? null,
+      }).then(({ error }: { error: any }) => { if (error) console.warn("Supabase addProduct:", error.message); });
+    }
     triggerSync();
     return newProd;
   };
@@ -322,6 +502,20 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = products.map((item) => (item.id === p.id ? p : item));
     setProducts(updated);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("products").update({
+        name: p.name,
+        slug: p.slug,
+        description: p.description ?? "",
+        price: p.price,
+        category_id: p.category_id,
+        image_url: p.image_url,
+        is_available: p.is_available ?? true,
+        is_promotion: p.is_promotion ?? false,
+        promotion_price: p.promotion_price ?? null,
+      }).eq("id", p.id).then(({ error }: { error: any }) => { if (error) console.warn("Supabase updateProduct:", error.message); });
+    }
     triggerSync();
   };
 
@@ -329,6 +523,10 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const updated = products.filter((item) => item.id !== pId);
     setProducts(updated);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+    if (isSupabaseConfigured()) {
+      const supabase = getDb();
+      supabase.from("products").delete().eq("id", pId).then(({ error }: { error: any }) => { if (error) console.warn("Supabase deleteProduct:", error.message); });
+    }
     triggerSync();
   };
 
@@ -338,6 +536,11 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     );
     setProducts(updated);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+    const toggled = updated.find((p) => p.id === pId);
+    if (isSupabaseConfigured() && toggled) {
+      const supabase = getDb();
+      supabase.from("products").update({ is_available: toggled.is_available }).eq("id", pId).then(({ error }: { error: any }) => { if (error) console.warn("Supabase toggleAvailability:", error.message); });
+    }
     triggerSync();
   };
 
@@ -383,3 +586,5 @@ export function useRestaurantData() {
   }
   return context;
 }
+
+

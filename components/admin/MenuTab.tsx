@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { 
   Plus, 
   Search, 
@@ -8,7 +8,6 @@ import {
   Pencil, 
   Trash2, 
   X, 
-  Check, 
   AlertCircle, 
   Filter, 
   Package, 
@@ -16,9 +15,11 @@ import {
   CheckCircle2, 
   XCircle,
   Upload,
-  ImageIcon
+  ImageIcon,
+  Loader2
 } from "lucide-react";
 import { Category, Product, VariationGroup } from "@/types";
+import { uploadProductImage } from "@/lib/supabase/storage";
 
 interface MenuTabProps {
   categories: Category[];
@@ -28,13 +29,6 @@ interface MenuTabProps {
   onUpdateProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
 }
-
-const PRESET_IMAGES = [
-  { label: "Burger", url: "/images/hero-burger.jpg" },
-  { label: "Tacos", url: "/images/tacos-maxi.jpg" },
-  { label: "Sandwich Kefta", url: "/images/sandwich-kefta.jpg" },
-  { label: "Coca-Cola", url: "/images/coca-cola.jpg" },
-];
 
 export function MenuTab({
   categories,
@@ -60,8 +54,10 @@ export function MenuTab({
   const [promotionPrice, setPromotionPrice] = useState<number>(0);
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-  const [customUrlInput, setCustomUrlInput] = useState("");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAvailable, setIsAvailable] = useState(true);
   const [formError, setFormError] = useState("");
 
@@ -78,7 +74,9 @@ export function MenuTab({
     setIsPromotion(false);
     setPromotionPrice(0);
     setDescription("");
-    setImageUrl(PRESET_IMAGES[0].url);
+    setImageUrl("");
+    setSelectedImageFile(null);
+    setImagePreviewUrl("");
     setIsAvailable(true);
     setFormError("");
     setIsModalOpen(true);
@@ -95,9 +93,33 @@ export function MenuTab({
     setPromotionPrice(p.promotion_price || 0);
     setDescription(p.description || "");
     setImageUrl(p.image_url || "");
+    setSelectedImageFile(null);
+    setImagePreviewUrl(p.image_url || "");
     setIsAvailable(p.is_available !== false);
     setFormError("");
     setIsModalOpen(true);
+  };
+
+  // Sélection d'un fichier image depuis l'ordinateur
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validation type
+    if (!["image/jpeg", "image/png", "image/gif", "image/webp"].includes(file.type)) {
+      setFormError("Format non supporté. Utilisez JPG, PNG, GIF ou WebP.");
+      return;
+    }
+    // Validation taille (5 Mo max)
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("L'image est trop lourde. Taille maximale : 5 Mo.");
+      return;
+    }
+
+    setFormError("");
+    setSelectedImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(previewUrl);
   };
 
   // Basculer la disponibilité en 1 clic
@@ -109,7 +131,7 @@ export function MenuTab({
   };
 
   // Soumission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setFormError("Le nom du plat est obligatoire.");
@@ -122,6 +144,20 @@ export function MenuTab({
     if (price <= 0) {
       setFormError("Le prix doit être supérieur à zéro.");
       return;
+    }
+
+    let finalImageUrl = imageUrl;
+
+    // Si un nouveau fichier a été sélectionné, l'uploader
+    if (selectedImageFile) {
+      setIsUploading(true);
+      const { url, error: uploadError } = await uploadProductImage(selectedImageFile, "products");
+      setIsUploading(false);
+      if (uploadError && !url) {
+        setFormError(`Erreur lors de l'upload de l'image: ${uploadError}`);
+        return;
+      }
+      finalImageUrl = url;
     }
 
     const slug = name
@@ -139,7 +175,7 @@ export function MenuTab({
         description: description.trim(),
         price: Number(price),
         category_id: categoryId,
-        image_url: imageUrl.trim() || undefined,
+        image_url: finalImageUrl.trim() || undefined,
         is_available: isAvailable,
         is_promotion: isPromotion,
         promotion_price: isPromotion && promotionPrice > 0 ? Number(promotionPrice) : null,
@@ -151,7 +187,7 @@ export function MenuTab({
         description: description.trim(),
         price: Number(price),
         category_id: categoryId,
-        image_url: imageUrl.trim() || undefined,
+        image_url: finalImageUrl.trim() || undefined,
         is_available: isAvailable,
         is_promotion: isPromotion,
         promotion_price: isPromotion && promotionPrice > 0 ? Number(promotionPrice) : null,
@@ -426,10 +462,10 @@ export function MenuTab({
                       <div className="flex flex-col sm:flex-row items-center gap-5">
                         {/* À gauche : Aperçu de l'image sélectionnée dans un cadre carré en pointillés */}
                         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-surface flex items-center justify-center overflow-hidden shrink-0 shadow-xs relative">
-                          {imageUrl ? (
+                          {(imagePreviewUrl || imageUrl) ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={imageUrl}
+                              src={imagePreviewUrl || imageUrl}
                               alt="Aperçu du plat"
                               className="w-full h-full object-contain p-1 rounded-xl"
                             />
@@ -441,25 +477,53 @@ export function MenuTab({
                           )}
                         </div>
 
-                        {/* À droite : Deux boutons rectangulaires */}
+                        {/* À droite : Boutons d'action */}
                         <div className="flex-1 w-full space-y-2.5">
-                          {/* 1. Choisir depuis la bibliothèque */}
+                          {/* Input fichier caché */}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            className="hidden"
+                            onChange={handleFileSelect}
+                          />
+
+                          {/* 1. Choisir une image depuis l'ordinateur */}
                           <button
                             type="button"
-                            onClick={() => {
-                              setCustomUrlInput(imageUrl);
-                              setIsLibraryOpen(true);
-                            }}
-                            className="w-full py-2.5 px-4 rounded-xl border border-border bg-surface hover:bg-surface-hover text-foreground font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="w-full py-2.5 px-4 rounded-xl border border-border bg-surface hover:bg-surface-hover text-foreground font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Upload className="w-4 h-4 text-emerald-600" />
-                            <span>Choisir depuis la bibliothèque</span>
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
+                                <span>Upload en cours…</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 text-emerald-600" />
+                                <span>Choisir une image</span>
+                              </>
+                            )}
                           </button>
+
+                          {/* Nom du fichier sélectionné */}
+                          {selectedImageFile && (
+                            <p className="text-[11px] text-emerald-600 font-semibold truncate">
+                              ✓ {selectedImageFile.name}
+                            </p>
+                          )}
 
                           {/* 2. Supprimer l'image */}
                           <button
                             type="button"
-                            onClick={() => setImageUrl("")}
+                            onClick={() => {
+                              setImageUrl("");
+                              setImagePreviewUrl("");
+                              setSelectedImageFile(null);
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                            }}
                             className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-colors"
                           >
                             <X className="w-4 h-4 stroke-[2.5]" />
@@ -724,109 +788,7 @@ export function MenuTab({
         </div>
       )}
 
-      {/* Modal Bibliothèque d'images */}
-      {isLibraryOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-surface border border-border rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2">
-                <Upload className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-foreground">
-                  Bibliothèque d'images
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsLibraryOpen(false)}
-                className="w-8 h-8 rounded-lg text-muted hover:text-foreground hover:bg-surface-hover flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-muted">
-              Sélectionnez une photo haute résolution parmi la galerie du restaurant ou saisissez une URL personnalisée :
-            </p>
-
-            {/* Grille des photos disponibles */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-1">
-              {[
-                { label: "Classic Burger", url: "/images/hero-burger.jpg" },
-                { label: "Tacos Maxi", url: "/images/tacos-maxi.jpg" },
-                { label: "Sandwich Kefta", url: "/images/sandwich-kefta.jpg" },
-                { label: "Coca-Cola Frais", url: "/images/coca-cola.jpg" },
-                { label: "Scooter Livraison", url: "/images/delivery-scooter.jpg" },
-              ].map((item) => {
-                const isSelected = customUrlInput === item.url;
-                return (
-                  <button
-                    key={item.url}
-                    type="button"
-                    onClick={() => setCustomUrlInput(item.url)}
-                    className={`relative rounded-xl overflow-hidden border-2 p-1 flex flex-col items-center gap-1.5 transition-all text-left ${
-                      isSelected
-                        ? "border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/20"
-                        : "border-border hover:border-emerald-500/40 bg-surface"
-                    }`}
-                  >
-                    <div className="w-full aspect-square rounded-lg overflow-hidden bg-muted/20 relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.url}
-                        alt={item.label}
-                        className="w-full h-full object-cover"
-                      />
-                      {isSelected && (
-                        <div className="absolute inset-0 bg-emerald-600/30 flex items-center justify-center">
-                          <Check className="w-6 h-6 text-white stroke-[3] drop-shadow" />
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[11px] font-bold text-foreground truncate w-full text-center">
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Saisie d'une URL personnalisée */}
-            <div className="pt-2 border-t border-border space-y-1.5">
-              <label className="text-xs font-semibold text-foreground block">
-                Ou coller une URL d'image externe :
-              </label>
-              <input
-                type="text"
-                placeholder="https://... ou /images/..."
-                value={customUrlInput}
-                onChange={(e) => setCustomUrlInput(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-border bg-surface text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
-              />
-            </div>
-
-            {/* Boutons d'action */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setIsLibraryOpen(false)}
-                className="px-4 py-2 rounded-xl border border-border text-muted hover:text-foreground text-xs font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setImageUrl(customUrlInput);
-                  setIsLibraryOpen(false);
-                }}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-colors"
-              >
-                Choisir cette image
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Bibliothèque d'images - supprimée, remplacée par upload direct */}
 
     </div>
   );
